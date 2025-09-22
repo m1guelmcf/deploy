@@ -113,9 +113,7 @@ export default function HospitalLayout({ children }: HospitalLayoutProps) {
   return (
     <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
-      <div
-        className={`bg-white border-r border-gray-200 transition-all duration-300 ${sidebarCollapsed ? "w-16" : "w-64"} h-screen flex flex-col`}
-      >
+      <div className={`bg-white border-r border-gray-200 transition-all duration-300 ${sidebarCollapsed ? "w-16" : "w-64"} fixed left-0 top-0 h-screen flex flex-col z-10`}>
         <div className="p-4 border-b border-gray-200">
           <div className="flex items-center justify-between">
             {!sidebarCollapsed && (
@@ -132,7 +130,7 @@ export default function HospitalLayout({ children }: HospitalLayoutProps) {
           </div>
         </div>
 
-        <nav className="flex-1 p-2">
+        <nav className="flex-1 p-2 overflow-y-auto">
           {menuItems.map((item) => {
             const Icon = item.icon
             const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href))
@@ -152,7 +150,7 @@ export default function HospitalLayout({ children }: HospitalLayoutProps) {
           })}
         </nav>
 
-        <div className="border-t p-4">
+        <div className="border-t p-4 mt-auto">
           <div className="flex items-center space-x-3 mb-4">
             <Avatar>
               <AvatarImage src="/placeholder.svg?height=40&width=40" />
@@ -176,7 +174,7 @@ export default function HospitalLayout({ children }: HospitalLayoutProps) {
       </div>
           
       {/* Main Content */}
-      <div className="flex-1 flex flex-col">
+      <div className={`flex-1 flex flex-col transition-all duration-300 ${sidebarCollapsed ? "ml-16" : "ml-64"}`}>
         {/* Header */}
         <header className="bg-white border-b border-gray-200 px-6 py-4">
           <div className="flex items-center justify-between">
