@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Calendar, Clock, User, Shield, Stethoscope } from "lucide-react"
+import { Calendar, Clock, User, Shield, Stethoscope, Receipt, IdCard  } from "lucide-react"
 
 export default function HomePage() {
   return (
@@ -17,7 +17,7 @@ export default function HomePage() {
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           <Card className="hover:shadow-lg transition-shadow flex flex-col h-full">
             <CardHeader className="text-center flex-shrink-0">
-              <User className="w-12 h-12 text-blue-600 mx-auto mb-4" />
+              <User className="w-12 h-12 text-black-600 mx-auto mb-4" />
               <CardTitle>Área do Paciente</CardTitle>
               <CardDescription>Acesse sua área pessoal para agendar consultas e gerenciar seus dados</CardDescription>
             </CardHeader>
@@ -92,6 +92,60 @@ export default function HomePage() {
               </div>
               <Link href="/doctor/login" className="block mt-auto">
                 <Button className="w-full bg-green-600 hover:bg-green-700">Entrar como Médico</Button>
+              </Link>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow flex flex-col h-full">
+            <CardHeader className="text-center flex-shrink-0">
+              <IdCard  className="w-12 h-12 text-blue-600 mx-auto mb-4" />
+              <CardTitle>Área do Gestor</CardTitle>
+              <CardDescription>Acesso restrito para gestores e coordenadores</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 flex-grow flex flex-col">
+              <div className="space-y-3 flex-grow">
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <Calendar className="w-4 h-4" />
+                  <span>Relatórios gerenciais</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <User className="w-4 h-4" />
+                  <span>Configurações do sistema</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <Clock className="w-4 h-4" />
+                  <span>Gestão de usuários</span>
+                </div>
+              </div>
+              <Link href="#" className="block mt-auto">
+                <Button className="w-full bg-blue-600 hover:bg-blue-700">Entrar como Gestor</Button>
+              </Link>
+            </CardContent>
+          </Card>
+
+          <Card className="hover:shadow-lg transition-shadow flex flex-col h-full">
+            <CardHeader className="text-center flex-shrink-0">
+              <Receipt className="w-12 h-12 text-orange-600 mx-auto mb-4" />
+              <CardTitle>Área de Finanças</CardTitle>
+              <CardDescription>Acesso restrito para profissionais do setor financeiro</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4 flex-grow flex flex-col">
+              <div className="space-y-3 flex-grow">
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <Calendar className="w-4 h-4" />
+                  <span>Relatórios financeiros</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <User className="w-4 h-4" />
+                  <span>Faturamento</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm text-gray-600">
+                  <Clock className="w-4 h-4" />
+                  <span>Controle de pagamentos</span>
+                </div>
+              </div>
+              <Link href="#" className="block mt-auto">
+                <Button className="w-full bg-orange-600 hover:bg-orange-700">Entrar como Financeiro</Button>
               </Link>
             </CardContent>
           </Card>
