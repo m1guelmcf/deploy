@@ -1,7 +1,7 @@
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Calendar, Clock, User, Shield, Stethoscope } from "lucide-react"
+import { Calendar, Clock, User, Shield, Stethoscope, Receipt, IdCard } from "lucide-react"
 
 export default function HomePage() {
   return (
@@ -17,7 +17,7 @@ export default function HomePage() {
         <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
           <Card className="hover:shadow-lg transition-shadow flex flex-col h-full">
             <CardHeader className="text-center flex-shrink-0">
-              <User className="w-12 h-12 text-blue-600 mx-auto mb-4" />
+              <User className="w-12 h-12 text-black-600 mx-auto mb-4" />
               <CardTitle>Área do Paciente</CardTitle>
               <CardDescription>Acesse sua área pessoal para agendar consultas e gerenciar seus dados</CardDescription>
             </CardHeader>
