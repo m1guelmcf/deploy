@@ -112,35 +112,63 @@ export default function PacientesPage() {
     return (
         <SecretaryLayout>
             <div className="space-y-6">
-                <div className="flex items-center justify-between">
-                    <div>
-                        <h1 className="text-2xl font-bold text-gray-900">Pacientes</h1>
-                        <p className="text-gray-600">Gerencie as informações de seus pacientes</p>
-                    </div>
-                    <div className="flex gap-2">
-                        <Link href="/secretary/pacientes/novo">
-                            <Button className="bg-blue-600 hover:bg-blue-700">
-                                <Plus className="w-4 h-4 mr-2" />
-                                Adicionar
-                            </Button>
-                        </Link>
-                    </div>
-                </div>
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+       <div>
+        <h1 className="text-xl md:text-2xl font-bold text-gray-900">Pacientes</h1>
+        <p className="text-gray-600 text-sm md:text-base">Gerencie as informações de seus pacientes</p>
+    </div>
+    <div className="flex gap-2">
+        <Link href="/secretary/pacientes/novo">
+            <Button className="bg-blue-600 hover:bg-blue-700 w-full md:w-auto">
+                <Plus className="w-4 h-4 mr-2" />
+                Adicionar
+            </Button>
+        </Link>
+    </div>
+ </div>
 
-                <div className="flex items-center gap-4 bg-white p-4 rounded-lg border border-gray-200">
-                    <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-gray-700">Convênio</span>
-                        <Select value={convenioFilter} onValueChange={setConvenioFilter}>
-                            <SelectTrigger className="w-40">
-                                <SelectValue placeholder="Selecione o Convênio" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="all">Todos</SelectItem>
-                                <SelectItem value="Particular">Particular</SelectItem>
-                                <SelectItem value="SUS">SUS</SelectItem>
-                                <SelectItem value="Unimed">Unimed</SelectItem>
-                            </SelectContent>
-                        </Select>
+        <div className="flex flex-col md:flex-row flex-wrap gap-4 bg-white p-4 rounded-lg border border-gray-200">
+    {/* Convênio */}
+    <div className="flex items-center gap-2 w-full md:w-auto">
+        <span className="text-sm font-medium text-gray-700">Convênio</span>
+        <Select value={convenioFilter} onValueChange={setConvenioFilter}>
+            <SelectTrigger className="w-full md:w-40">
+                <SelectValue placeholder="Selecione o Convênio" />
+            </SelectTrigger>
+            <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="Particular">Particular</SelectItem>
+                <SelectItem value="SUS">SUS</SelectItem>
+                <SelectItem value="Unimed">Unimed</SelectItem>
+            </SelectContent>
+        </Select>
+    </div>
+    
+        <div className="flex items-center gap-2 w-full md:w-auto">
+        <span className="text-sm font-medium text-gray-700">VIP</span>
+        <Select value={vipFilter} onValueChange={setVipFilter}>
+            <SelectTrigger className="w-full md:w-32">
+                <SelectValue placeholder="Selecione" />
+            </SelectTrigger>
+            <SelectContent>
+                <SelectItem value="all">Todos</SelectItem>
+                <SelectItem value="vip">VIP</SelectItem>
+                <SelectItem value="regular">Regular</SelectItem>
+            </SelectContent>
+        </Select>
+              </div>
+        <div className="flex items-center gap-2 w-full md:w-auto">
+        <span className="text-sm font-medium text-gray-700">Aniversariantes</span>
+        <Select>
+            <SelectTrigger className="w-full md:w-32">
+                <SelectValue placeholder="Selecione" />
+            </SelectTrigger>
+        <SelectContent>
+            <SelectItem value="today">Hoje</SelectItem>
+            <SelectItem value="week">Esta semana</SelectItem>
+            <SelectItem value="month">Este mês</SelectItem>
+            </SelectContent>
+                </Select>
                     </div>
 
                     <div className="flex items-center gap-2">
@@ -171,27 +199,28 @@ export default function PacientesPage() {
                         </Select>
                     </div>
 
-                    <Button variant="outline" className="ml-auto bg-transparent">
-                        <Filter className="w-4 h-4 mr-2" />
-                        Filtro avançado
-                    </Button>
+                     <Button variant="outline" className="ml-auto bg-transparent w-full md:w-auto">
+        <Filter className="w-4 h-4 mr-2" />
+        Filtro avançado
+    </Button>
+
                 </div>
 
                 <div className="bg-white rounded-lg border border-gray-200">
-                    <div className="overflow-x-auto">
+                     <div className="overflow-x-auto">
                         {error ? (
                             <div className="p-6 text-red-600">{`Erro ao carregar pacientes: ${error}`}</div>
                         ) : (
-                            <table className="w-full">
+                           <table className="w-full min-w-[600px]">
                                 <thead className="bg-gray-50 border-b border-gray-200">
                                     <tr>
-                                        <th className="text-left p-4 font-medium text-gray-700">Nome</th>
-                                        <th className="text-left p-4 font-medium text-gray-700">Telefone</th>
-                                        <th className="text-left p-4 font-medium text-gray-700">Cidade</th>
-                                        <th className="text-left p-4 font-medium text-gray-700">Estado</th>
-                                        <th className="text-left p-4 font-medium text-gray-700">Último atendimento</th>
-                                        <th className="text-left p-4 font-medium text-gray-700">Próximo atendimento</th>
-                                        <th className="text-left p-4 font-medium text-gray-700">Ações</th>
+                                         <th className="text-left p-2 md:p-4 font-medium text-gray-700">Nome</th>
+                                         <th className="text-left p-2 md:p-4 font-medium text-gray-700">Telefone</th>
+                                         <th className="text-left p-2 md:p-4 font-medium text-gray-700">Cidade</th>
+                                         <th className="text-left p-2 md:p-4 font-medium text-gray-700">Estado</th>
+                                         <th className="text-left p-2 md:p-4 font-medium text-gray-700">Último atendimento</th>
+                                         <th className="text-left p-2 md:p-4 font-medium text-gray-700">Próximo atendimento</th>
+                                         <th className="text-left p-2 md:p-4 font-medium text-gray-700">Ações</th>
                                     </tr>
                                 </thead>
                                 <tbody>
