@@ -155,5 +155,3 @@ export default function DoctorLogin() {
     </div>
   )
 }
-// qualquer coisa
-// qualquer coisaa

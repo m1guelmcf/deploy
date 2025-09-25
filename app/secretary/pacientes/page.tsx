@@ -1,6 +1,24 @@
+/*********************************************
+ * 🧠 COMPONENTE: PacientesPage (Refatorado, Corrigido e Completo)
+ *
+ * O QUE FAZ: Página principal para gerenciamento de pacientes.
+ *
+ * CORREÇÃO APLICADA:
+ * - A lógica do hook `usePacientesComPaginacao` foi corrigida
+ *   para garantir que o scroll infinito funcione corretamente,
+ *   evitando o problema de "stale state".
+ *
+ * FUNCIONALIDADES MANTIDAS:
+ * - Todos os filtros (Convênio, VIP, Aniversariantes).
+ * - Todas as colunas da tabela.
+ * - Todas as ações do menu (Ver detalhes, Editar, etc.).
+ * - Carregamento infinito (scroll infinito).
+ *
+ *********************************************/
+
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
@@ -9,21 +27,175 @@ import { Plus, Edit, Trash2, Eye, Calendar, Filter } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import SecretaryLayout from "@/components/secretary-layout";
 
+// --- TIPO DEFINIDO PARA O PACIENTE ---
+type Paciente = {
+    id: string;
+    nome: string;
+    telefone: string;
+    cidade: string;
+    estado: string;
+    ultimoAtendimento?: string;
+    proximoAtendimento?: string;
+    convenio: string;
+    vip: boolean;
+    status?: string;
+};
+
+// --- HOOK CUSTOMIZADO PARA LÓGICA DE DADOS (VERSÃO FINAL E ROBUSTA) ---
+const usePacientesComPaginacao = () => {
+    const [pacientes, setPacientes] = useState<Paciente[]>([]);
+    const [erro, setErro] = useState<string | null>(null);
+    const [estaBuscando, setEstaBuscando] = useState(false);
+    const [pagina, setPagina] = useState(1);
+    const [temProximaPagina, setTemProximaPagina] = useState(true);
+    const elementoObservadoRef = useRef<HTMLDivElement | null>(null);
+
+    const buscarPacientes = async (paginaParaBuscar: number) => {
+        if (estaBuscando) return;
+        setEstaBuscando(true);
+        setErro(null);
+        try {
+            const res = await fetch(`https://mock.apidog.com/m1/1053378-0-default/pacientes?page=${paginaParaBuscar}&limit=20`);
+            if (!res.ok) throw new Error(`HTTP ${res.status}`);
+            const json = await res.json();
+            const items = Array.isArray(json?.data) ? json.data : [];
+
+            const mapped: Paciente[] = items.map((p: any) => ({
+                id: String(p.id ?? ""),
+                nome: p.nome ?? "",
+                telefone: p?.contato?.celular ?? p?.contato?.telefone1 ?? p?.telefone ?? "",
+                cidade: p?.endereco?.cidade ?? p?.cidade ?? "",
+                estado: p?.endereco?.estado ?? p?.estado ?? "",
+                ultimoAtendimento: p.ultimo_atendimento ?? p.ultimoAtendimento,
+                proximoAtendimento: p.proximo_atendimento ?? p.proximoAtendimento,
+                convenio: p.convenio ?? "",
+                vip: Boolean(p.vip ?? false),
+                status: p.status,
+            }));
+
+            setPacientes((prev) => [...prev, ...mapped]);
+            setTemProximaPagina(Boolean(json?.pagination?.has_next));
+            setPagina(paginaParaBuscar + 1);
+        } catch (e: any) {
+            setErro(e?.message || "Erro ao buscar pacientes");
+        } finally {
+            setEstaBuscando(false);
+        }
+    };
+
+    // Efeito para a busca inicial (sem alterações)
+    useEffect(() => {
+        buscarPacientes(1);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    // CORREÇÃO DEFINITIVA: LÓGICA PROATIVA GARANTIDA COM TIMEOUT
+    useEffect(() => {
+        if (!elementoObservadoRef.current || !temProximaPagina) return;
+
+        // Mecanismo Reativo (Scroll do usuário) - continua igual
+        const observer = new IntersectionObserver((entries) => {
+            if (entries[0].isIntersecting && !estaBuscando) {
+                buscarPacientes(pagina);
+            }
+        });
+        observer.observe(elementoObservadoRef.current);
+
+        // Mecanismo Proativo (Preenchimento automático da tela)
+        const checarPreenchimento = () => {
+            if (estaBuscando || !temProximaPagina || !elementoObservadoRef.current) {
+                return;
+            }
+            const { top } = elementoObservadoRef.current.getBoundingClientRect();
+            if (top <= window.innerHeight) {
+                buscarPacientes(pagina);
+            }
+        };
+
+        // A MUDANÇA CRUCIAL:
+        // Usamos um setTimeout para adiar a verificação. Isso dá ao navegador
+        // tempo para renderizar os novos pacientes no DOM antes de medirmos a posição
+        // do elemento gatilho. Isso elimina a inconsistência.
+        const timeoutId = setTimeout(checarPreenchimento, 100); // 100ms é um tempo seguro
+
+        // Função de limpeza para evitar memory leaks
+        return () => {
+            clearTimeout(timeoutId);
+            if (elementoObservadoRef.current) {
+                observer.unobserve(elementoObservadoRef.current);
+            }
+        };
+    // A dependência em `pacientes` garante que esta lógica seja reavaliada
+    // toda vez que uma nova leva de pacientes chegar.
+    }, [pacientes, pagina, estaBuscando, temProximaPagina]);
+
+    return { pacientes, erro, estaBuscando, elementoObservadoRef, setPacientes };
+};
+
+// --- COMPONENTES DE MODAL (COM TIPAGEM) ---
+type ModalConfirmarExclusaoProps = { isOpen: boolean; onClose: () => void; onConfirm: () => void; };
+const ModalConfirmarExclusao = ({ isOpen, onClose, onConfirm }: ModalConfirmarExclusaoProps) => (
+    <AlertDialog open={isOpen} onOpenChange={onClose}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+                <AlertDialogDescription>Tem certeza que deseja excluir este paciente? Esta ação não pode ser desfeita.</AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel onClick={onClose}>Cancelar</AlertDialogCancel>
+                <AlertDialogAction onClick={onConfirm} className="bg-red-600 hover:bg-red-700">Excluir</AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+);
+
+type ModalDetalhesPacienteProps = { isOpen: boolean; onClose: () => void; detalhes: any | { error: string } | null; };
+const ModalDetalhesPaciente = ({ isOpen, onClose, detalhes }: ModalDetalhesPacienteProps) => (
+    <AlertDialog open={isOpen} onOpenChange={onClose}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Detalhes do Paciente</AlertDialogTitle>
+                <AlertDialogDescription asChild>
+                    {detalhes === null ? (
+                        <div className="text-gray-500">Carregando...</div>
+                    ) : detalhes?.error ? (
+                        <div className="text-red-600">{detalhes.error}</div>
+                    ) : (
+                        <div className="space-y-2 text-left text-gray-800">
+                            <div><strong>Nome:</strong> {detalhes.nome}</div>
+                            <div><strong>Telefone:</strong> {detalhes?.contato?.celular ?? detalhes?.contato?.telefone1 ?? detalhes?.telefone ?? ""}</div>
+                            <div><strong>Cidade:</strong> {detalhes?.endereco?.cidade ?? detalhes?.cidade ?? ""}</div>
+                            <div><strong>Estado:</strong> {detalhes?.endereco?.estado ?? detalhes?.estado ?? ""}</div>
+                            <div><strong>Convênio:</strong> {detalhes.convenio ?? ""}</div>
+                            <div><strong>VIP:</strong> {detalhes.vip ? "Sim" : "Não"}</div>
+                            <div><strong>Status:</strong> {detalhes.status ?? ""}</div>
+                            <div><strong>Último atendimento:</strong> {detalhes.ultimo_atendimento ?? detalhes.ultimoAtendimento ?? ""}</div>
+                            <div><strong>Próximo atendimento:</strong> {detalhes.proximo_atendimento ?? detalhes.proximoAtendimento ?? ""}</div>
+                        </div>
+                    )}
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel onClick={onClose}>Fechar</AlertDialogCancel>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+);
+
+// --- COMPONENTE PRINCIPAL ---
 export default function PacientesPage() {
+    const { pacientes, erro, estaBuscando, elementoObservadoRef, setPacientes } = usePacientesComPaginacao();
+
     const [searchTerm, setSearchTerm] = useState("");
     const [convenioFilter, setConvenioFilter] = useState("all");
     const [vipFilter, setVipFilter] = useState("all");
-    const [patients, setPatients] = useState<any[]>([]);
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string | null>(null);
-    const [page, setPage] = useState(1);
-    const [hasNext, setHasNext] = useState(true);
-    const [isFetching, setIsFetching] = useState(false);
-    const observerRef = useRef<HTMLDivElement | null>(null);
+
     const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
-    const [patientToDelete, setPatientToDelete] = useState<string | null>(null);
+    const [patientToDelete, setPatientToDelete] = useState<Paciente | null>(null);
+
     const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
     const [patientDetails, setPatientDetails] = useState<any | null>(null);
+
     const openDetailsDialog = async (patientId: string) => {
         setDetailsDialogOpen(true);
         setPatientDetails(null);
@@ -37,81 +209,31 @@ export default function PacientesPage() {
         }
     };
 
-    const fetchPacientes = useCallback(
-        async (pageToFetch: number) => {
-            if (isFetching || !hasNext) return;
-            setIsFetching(true);
-            setError(null);
-            try {
-                const res = await fetch(`https://mock.apidog.com/m1/1053378-0-default/pacientes?page=${pageToFetch}&limit=20`);
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                const json = await res.json();
-                const items = Array.isArray(json?.data) ? json.data : [];
-                const mapped = items.map((p: any) => ({
-                    id: String(p.id ?? ""),
-                    nome: p.nome ?? "",
-                    telefone: p?.contato?.celular ?? p?.contato?.telefone1 ?? p?.telefone ?? "",
-                    cidade: p?.endereco?.cidade ?? p?.cidade ?? "",
-                    estado: p?.endereco?.estado ?? p?.estado ?? "",
-                    ultimoAtendimento: p.ultimo_atendimento ?? p.ultimoAtendimento ?? undefined,
-                    proximoAtendimento: p.proximo_atendimento ?? p.proximoAtendimento ?? undefined,
-                    convenio: p.convenio ?? "",
-                    vip: Boolean(p.vip ?? false),
-                    status: p.status ?? undefined,
-                }));
-                setPatients((prev) => [...prev, ...mapped]);
-                setHasNext(Boolean(json?.pagination?.has_next));
-                setPage(pageToFetch + 1);
-            } catch (e: any) {
-                setError(e?.message || "Erro ao buscar pacientes");
-            } finally {
-                setIsFetching(false);
-            }
-        },
-        [isFetching, hasNext]
-    );
+    const openDeleteDialog = (paciente: Paciente) => {
+        setPatientToDelete(paciente);
+        setDeleteDialogOpen(true);
+    };
 
-    useEffect(() => {
-        fetchPacientes(page);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-
-    useEffect(() => {
-        if (!observerRef.current || !hasNext) return;
-        const observer = new window.IntersectionObserver((entries) => {
-            if (entries[0].isIntersecting && !isFetching && hasNext) {
-                fetchPacientes(page);
-            }
-        });
-        observer.observe(observerRef.current);
-        return () => {
-            if (observerRef.current) observer.unobserve(observerRef.current);
-        };
-    }, [fetchPacientes, page, hasNext, isFetching]);
-
-    const handleDeletePatient = (patientId: string) => {
-        // Remove from current list (client-side deletion)
-        setPatients((prev) => prev.filter((p) => String(p.id) !== String(patientId)));
+    const handleConfirmDelete = () => {
+        if (!patientToDelete) return;
+        setPacientes((prev) => prev.filter((p) => p.id !== patientToDelete.id));
         setDeleteDialogOpen(false);
         setPatientToDelete(null);
     };
 
-    const openDeleteDialog = (patientId: string) => {
-        setPatientToDelete(patientId);
-        setDeleteDialogOpen(true);
-    };
-
-    const filteredPatients = patients.filter((patient) => {
-        const matchesSearch = patient.nome?.toLowerCase().includes(searchTerm.toLowerCase()) || patient.telefone?.includes(searchTerm);
-        const matchesConvenio = convenioFilter === "all" || (patient.convenio ?? "") === convenioFilter;
-        const matchesVip = vipFilter === "all" || (vipFilter === "vip" && patient.vip) || (vipFilter === "regular" && !patient.vip);
-
-        return matchesSearch && matchesConvenio && matchesVip;
-    });
+    const filteredPatients = useMemo(() => {
+        return pacientes.filter((patient) => {
+            const matchesSearch = patient.nome?.toLowerCase().includes(searchTerm.toLowerCase()) || patient.telefone?.includes(searchTerm);
+            const matchesConvenio = convenioFilter === "all" || patient.convenio === convenioFilter;
+            const matchesVip = vipFilter === "all" || (vipFilter === "vip" && patient.vip) || (vipFilter === "regular" && !patient.vip);
+            return matchesSearch && matchesConvenio && matchesVip;
+        });
+    }, [pacientes, searchTerm, convenioFilter, vipFilter]);
 
     return (
         <SecretaryLayout>
             <div className="space-y-6">
+                {/* --- CABEÇALHO DA PÁGINA (MANTIDO) --- */}
                 <div className="flex items-center justify-between">
                     <div>
                         <h1 className="text-2xl font-bold text-gray-900">Pacientes</h1>
@@ -127,13 +249,12 @@ export default function PacientesPage() {
                     </div>
                 </div>
 
+                {/* --- BARRA DE FILTROS (MANTIDA) --- */}
                 <div className="flex items-center gap-4 bg-white p-4 rounded-lg border border-gray-200">
                     <div className="flex items-center gap-2">
                         <span className="text-sm font-medium text-gray-700">Convênio</span>
                         <Select value={convenioFilter} onValueChange={setConvenioFilter}>
-                            <SelectTrigger className="w-40">
-                                <SelectValue placeholder="Selecione o Convênio" />
-                            </SelectTrigger>
+                            <SelectTrigger className="w-40"><SelectValue placeholder="Selecione" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">Todos</SelectItem>
                                 <SelectItem value="Particular">Particular</SelectItem>
@@ -142,13 +263,10 @@ export default function PacientesPage() {
                             </SelectContent>
                         </Select>
                     </div>
-
                     <div className="flex items-center gap-2">
                         <span className="text-sm font-medium text-gray-700">VIP</span>
                         <Select value={vipFilter} onValueChange={setVipFilter}>
-                            <SelectTrigger className="w-32">
-                                <SelectValue placeholder="Selecione" />
-                            </SelectTrigger>
+                            <SelectTrigger className="w-32"><SelectValue placeholder="Selecione" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="all">Todos</SelectItem>
                                 <SelectItem value="vip">VIP</SelectItem>
@@ -156,13 +274,10 @@ export default function PacientesPage() {
                             </SelectContent>
                         </Select>
                     </div>
-
                     <div className="flex items-center gap-2">
                         <span className="text-sm font-medium text-gray-700">Aniversariantes</span>
                         <Select>
-                            <SelectTrigger className="w-32">
-                                <SelectValue placeholder="Selecione" />
-                            </SelectTrigger>
+                            <SelectTrigger className="w-32"><SelectValue placeholder="Selecione" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="today">Hoje</SelectItem>
                                 <SelectItem value="week">Esta semana</SelectItem>
@@ -170,17 +285,17 @@ export default function PacientesPage() {
                             </SelectContent>
                         </Select>
                     </div>
-
                     <Button variant="outline" className="ml-auto bg-transparent">
                         <Filter className="w-4 h-4 mr-2" />
                         Filtro avançado
                     </Button>
                 </div>
 
+                {/* --- TABELA DE PACIENTES (MANTIDA) --- */}
                 <div className="bg-white rounded-lg border border-gray-200">
                     <div className="overflow-x-auto">
-                        {error ? (
-                            <div className="p-6 text-red-600">{`Erro ao carregar pacientes: ${error}`}</div>
+                        {erro ? (
+                            <div className="p-6 text-red-600">{`Erro ao carregar pacientes: ${erro}`}</div>
                         ) : (
                             <table className="w-full">
                                 <thead className="bg-gray-50 border-b border-gray-200">
@@ -195,10 +310,10 @@ export default function PacientesPage() {
                                     </tr>
                                 </thead>
                                 <tbody>
-                                    {filteredPatients.length === 0 ? (
+                                    {filteredPatients.length === 0 && !estaBuscando ? (
                                         <tr>
                                             <td colSpan={7} className="p-8 text-center text-gray-500">
-                                                {patients.length === 0 ? "Nenhum paciente cadastrado" : "Nenhum paciente encontrado com os filtros aplicados"}
+                                                {pacientes.length === 0 ? "Nenhum paciente cadastrado" : "Nenhum paciente encontrado com os filtros aplicados"}
                                             </td>
                                         </tr>
                                     ) : (
@@ -220,26 +335,22 @@ export default function PacientesPage() {
                                                 <td className="p-4">
                                                     <DropdownMenu>
                                                         <DropdownMenuTrigger asChild>
-                                                            <div className="text-blue-600">Ações</div>
+                                                            <div className="text-blue-600 cursor-pointer">Ações</div>
                                                         </DropdownMenuTrigger>
                                                         <DropdownMenuContent align="end">
-                                                            <DropdownMenuItem onClick={() => openDetailsDialog(String(patient.id))}>
-                                                                <Eye className="w-4 h-4 mr-2" />
-                                                                Ver detalhes
+                                                            <DropdownMenuItem onClick={() => openDetailsDialog(patient.id)}>
+                                                                <Eye className="w-4 h-4 mr-2" /> Ver detalhes
                                                             </DropdownMenuItem>
                                                             <DropdownMenuItem asChild>
                                                                 <Link href={`/secretary/pacientes/${patient.id}/editar`}>
-                                                                    <Edit className="w-4 h-4 mr-2" />
-                                                                    Editar
+                                                                    <Edit className="w-4 h-4 mr-2" /> Editar
                                                                 </Link>
                                                             </DropdownMenuItem>
                                                             <DropdownMenuItem>
-                                                                <Calendar className="w-4 h-4 mr-2" />
-                                                                Marcar consulta
+                                                                <Calendar className="w-4 h-4 mr-2" /> Marcar consulta
                                                             </DropdownMenuItem>
-                                                            <DropdownMenuItem className="text-red-600" onClick={() => openDeleteDialog(String(patient.id))}>
-                                                                <Trash2 className="w-4 h-4 mr-2" />
-                                                                Excluir
+                                                            <DropdownMenuItem className="text-red-600" onClick={() => openDeleteDialog(patient)}>
+                                                                <Trash2 className="w-4 h-4 mr-2" /> Excluir
                                                             </DropdownMenuItem>
                                                         </DropdownMenuContent>
                                                     </DropdownMenu>
@@ -250,74 +361,22 @@ export default function PacientesPage() {
                                 </tbody>
                             </table>
                         )}
-                        <div ref={observerRef} style={{ height: 1 }} />
-                        {isFetching && <div className="p-4 text-center text-gray-500">Carregando mais pacientes...</div>}
+                        <div ref={elementoObservadoRef} style={{ height: 1 }} />
+                        {estaBuscando && <div className="p-4 text-center text-gray-500">Carregando mais pacientes...</div>}
                     </div>
                 </div>
 
-                <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
-                            <AlertDialogDescription>Tem certeza que deseja excluir este paciente? Esta ação não pode ser desfeita.</AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-                            <AlertDialogAction onClick={() => patientToDelete && handleDeletePatient(patientToDelete)} className="bg-red-600 hover:bg-red-700">
-                                Excluir
-                            </AlertDialogAction>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
-
-                {/* Modal de detalhes do paciente */}
-                <AlertDialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
-                    <AlertDialogContent>
-                        <AlertDialogHeader>
-                            <AlertDialogTitle>Detalhes do Paciente</AlertDialogTitle>
-                            <AlertDialogDescription>
-                                {patientDetails === null ? (
-                                    <div className="text-gray-500">Carregando...</div>
-                                ) : patientDetails?.error ? (
-                                    <div className="text-red-600">{patientDetails.error}</div>
-                                ) : (
-                                    <div className="space-y-2 text-left">
-                                        <div>
-                                            <strong>Nome:</strong> {patientDetails.nome}
-                                        </div>
-                                        <div>
-                                            <strong>Telefone:</strong> {patientDetails?.contato?.celular ?? patientDetails?.contato?.telefone1 ?? patientDetails?.telefone ?? ""}
-                                        </div>
-                                        <div>
-                                            <strong>Cidade:</strong> {patientDetails?.endereco?.cidade ?? patientDetails?.cidade ?? ""}
-                                        </div>
-                                        <div>
-                                            <strong>Estado:</strong> {patientDetails?.endereco?.estado ?? patientDetails?.estado ?? ""}
-                                        </div>
-                                        <div>
-                                            <strong>Convênio:</strong> {patientDetails.convenio ?? ""}
-                                        </div>
-                                        <div>
-                                            <strong>VIP:</strong> {patientDetails.vip ? "Sim" : "Não"}
-                                        </div>
-                                        <div>
-                                            <strong>Status:</strong> {patientDetails.status ?? ""}
-                                        </div>
-                                        <div>
-                                            <strong>Último atendimento:</strong> {patientDetails.ultimo_atendimento ?? patientDetails.ultimoAtendimento ?? ""}
-                                        </div>
-                                        <div>
-                                            <strong>Próximo atendimento:</strong> {patientDetails.proximo_atendimento ?? patientDetails.proximoAtendimento ?? ""}
-                                        </div>
-                                    </div>
-                                )}
-                            </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                            <AlertDialogCancel>Fechar</AlertDialogCancel>
-                        </AlertDialogFooter>
-                    </AlertDialogContent>
-                </AlertDialog>
+                {/* --- MODAIS (MANTIDOS) --- */}
+                <ModalConfirmarExclusao
+                    isOpen={deleteDialogOpen}
+                    onClose={() => setDeleteDialogOpen(false)}
+                    onConfirm={handleConfirmDelete}
+                />
+                <ModalDetalhesPaciente
+                    isOpen={detailsDialogOpen}
+                    onClose={() => setDetailsDialogOpen(false)}
+                    detalhes={patientDetails}
+                />
             </div>
         </SecretaryLayout>
     );
