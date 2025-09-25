@@ -105,8 +105,8 @@ import DoctorLayout from "@/components/doctor-layout";
                             </tbody>
                         </table>
                     </div>
-                </div>
-            </div>
-        </DoctorLayout>
+                </div >
+            </div >
+        </DoctorLayout >
     );
 }
