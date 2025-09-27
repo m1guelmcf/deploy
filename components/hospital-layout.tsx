@@ -112,7 +112,7 @@ export default function HospitalLayout({ children }: HospitalLayoutProps) {
 
   return (
     <div className="min-h-screen bg-gray-50 flex">
-      {/* Sidebar */}
+      {/*  Sidebar  */}
       <div
         className={`bg-white border-r border-gray-200 transition-all duration-300 ${sidebarCollapsed ? "w-16" : "w-64"} h-screen flex flex-col`}
       >
