@@ -1,102 +1,110 @@
+"use client";
+
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Calendar, Clock, User, Shield, Stethoscope, Receipt, IdCard } from "lucide-react"
-
-export default function HomePage() {
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
-      <div className="container mx-auto px-4 py-16">
-        <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Sistema de Consultas Médicas</h1>
-          <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-            Gerencie suas consultas médicas de forma simples e eficiente
-          </p>
-        </div>
-
-        <div className="grid md:grid-cols-3 gap-8 max-w-6xl mx-auto">
-          <Card className="hover:shadow-lg transition-shadow flex flex-col h-full">
-            <CardHeader className="text-center flex-shrink-0">
-              <User className="w-12 h-12 text-black-600 mx-auto mb-4" />
-              <CardTitle>Área do Paciente</CardTitle>
-              <CardDescription>Acesse sua área pessoal para agendar consultas e gerenciar seus dados</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4 flex-grow flex flex-col">
-              <div className="space-y-3 flex-grow">
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Calendar className="w-4 h-4" />
-                  <span>Agendar consultas</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Clock className="w-4 h-4" />
-                  <span>Ver histórico de consultas</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <User className="w-4 h-4" />
-                  <span>Gerenciar dados pessoais</span>
-                </div>
-              </div>
-              <Link href="/patient/login" className="block mt-auto">
-                <Button className="w-full">Entrar como Paciente</Button>
-              </Link>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-lg transition-shadow flex flex-col h-full">
-            <CardHeader className="text-center flex-shrink-0">
-              <Shield className="w-12 h-12 text-purple-600 mx-auto mb-4" />
-              <CardTitle>Área da Secretária</CardTitle>
-              <CardDescription>Gerencie consultas, pacientes e agenda médica</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4 flex-grow flex flex-col">
-              <div className="space-y-3 flex-grow">
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Calendar className="w-4 h-4" />
-                  <span>Gerenciar consultas</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <User className="w-4 h-4" />
-                  <span>Cadastrar pacientes</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Clock className="w-4 h-4" />
-                  <span>Controlar agenda</span>
-                </div>
-              </div>
-              <Link href="/secretary/login" className="block mt-auto">
-                <Button className="w-full bg-purple-600 hover:bg-purple-700">Entrar como Secretária</Button>
-              </Link>
-            </CardContent>
-          </Card>
-
-          <Card className="hover:shadow-lg transition-shadow flex flex-col h-full">
-            <CardHeader className="text-center flex-shrink-0">
-              <Stethoscope className="w-12 h-12 text-green-600 mx-auto mb-4" />
-              <CardTitle>Área Médica</CardTitle>
-              <CardDescription>Acesso restrito para profissionais de saúde</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4 flex-grow flex flex-col">
-              <div className="space-y-3 flex-grow">
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Calendar className="w-4 h-4" />
-                  <span>Gerenciar agenda</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <User className="w-4 h-4" />
-                  <span>Ver pacientes</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm text-gray-600">
-                  <Clock className="w-4 h-4" />
-                  <span>Histórico de atendimentos</span>
-                </div>
-              </div>
-              <Link href="/doctor/login" className="block mt-auto">
-                <Button className="w-full bg-green-600 hover:bg-green-700">Entrar como Médico</Button>
-              </Link>
-            </CardContent>
-          </Card>
-        </div>
+export default function InicialPage() {
+  return ( <div className="min-h-screen flex flex-col bg-gray-50">
+      {}
+      <div className="bg-black text-white text-sm py-2 px-6 flex justify-between">
+        <span> Horário: 08h00 - 21h00</span>
+        <span> Email: contato@midconnecta.com</span>
       </div>
+
+      {}
+      <header className="bg-white shadow-md py-4 px-6 flex justify-between items-center">
+        <h1 className="text-2xl font-bold text-blue-700">MidConnecta</h1>
+        <nav className="flex space-x-6 text-gray-700 font-medium">
+          <a href="#home" className="hover:text-blue-600">Home</a>
+          <a href="#about" className="hover:text-blue-600">Sobre</a>
+          <a href="#departments" className="hover:text-blue-600">Departamentos</a>
+          <a href="#doctors" className="hover:text-blue-600">Médicos</a>
+          <a href="#contact" className="hover:text-blue-600">Contato</a>
+        </nav>
+       <div className="flex space-x-4">
+  {}
+  <Link href="/cadastro">
+    <Button
+    variant="outline"
+    className="rounded-full px-6 py-2 border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white transition cursor-pointer"
+  >
+    Login
+  </Button>
+</Link>
+         
+        </div>
+      </header>
+
+      {}
+      <section className="flex flex-col md:flex-row items-center justify-between px-10 md:px-20 py-16 bg-gray-100">
+        <div className="max-w-lg">
+          <h2 className="text-gray-600 uppercase text-sm">Bem-vindo à Saúde Digital</h2>
+          <h1 className="text-4xl font-extrabold text-black leading-tight mt-2">
+            Soluções Médicas <br /> & Cuidados com a Saúde
+          </h1>
+          <p className="text-gray-600 mt-4">
+            São mais de 25 anos de experiência em serviços médicos com qualidade e confiança.
+          </p>
+          <div className="mt-6 flex space-x-4">
+            <Button className="rounded-full px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white shadow-lg transition">
+              Nossos Serviços
+            </Button>
+            <Button
+              variant="outline"
+              className="rounded-full px-6 py-2 border-2 border-blue-600 text-blue-600 hover:bg-blue-600 hover:text-white transition"
+            >
+              Saiba Mais
+            </Button>
+          </div>
+        </div>
+        <div className="mt-10 md:mt-0">
+          <img
+            src="https://cdn-icons-png.flaticon.com/512/387/387561.png"
+            alt="Médico"
+            className="w-80"
+          />
+        </div>
+      </section>
+
+      {}
+      <section className="py-16 px-10 md:px-20 bg-white">
+        <h2 className="text-center text-3xl font-bold text-black">Nossos Serviços</h2>
+        <p className="text-center text-gray-600 mt-2">Serviços médicos que oferecemos</p>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-10">
+          <div className="p-6 bg-gray-100 rounded-xl shadow hover:shadow-lg transition">
+            <h3 className="text-xl font-semibold text-blue-600">Clínica Geral</h3>
+            <p className="text-gray-600 mt-2">
+              Atendimento médico geral com foco na prevenção e diagnóstico.
+            </p>
+            <Button className="mt-4 rounded-full bg-blue-600 hover:bg-blue-700 text-white px-5 py-2">
+              Agendar
+            </Button>
+          </div>
+          <div className="p-6 bg-gray-100 rounded-xl shadow hover:shadow-lg transition">
+            <h3 className="text-xl font-semibold text-blue-600">Pediatria</h3>
+            <p className="text-gray-600 mt-2">
+              Cuidado especializado para crianças e adolescentes.
+            </p>
+            <Button className="mt-4 rounded-full bg-blue-600 hover:bg-blue-700 text-white px-5 py-2">
+              Agendar
+            </Button>
+          </div>
+          <div className="p-6 bg-gray-100 rounded-xl shadow hover:shadow-lg transition">
+            <h3 className="text-xl font-semibold text-blue-600">Exames</h3>
+            <p className="text-gray-600 mt-2">
+              Exames laboratoriais e de imagem com precisão e agilidade.
+            </p>
+            <Button className="mt-4 rounded-full bg-blue-600 hover:bg-blue-700 text-white px-5 py-2">
+              Agendar
+            </Button>
+          </div>
+        </div>
+      </section>
+
+      {}
+      <footer className="bg-black text-white py-6 text-center">
+        <p>© 2025 MidConnecta</p>
+      </footer>
     </div>
-  )
+     );
 }
