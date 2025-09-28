@@ -11,13 +11,11 @@ async function login() {
       "Content-Type": "application/json",
       "apikey": API_KEY, // valor fixo
     },
-    body: JSON.stringify({ email: "hugo@popcode.com.br", password: "hdoria" }),
+    body: JSON.stringify({ email: "riseup@popcode.com.br", password: "riseup" }),
   });
 
   const data = await response.json();
-
-  console.log("Resposta da API:", data);
-  console.log("Token:", data.access_token);
+  console.log(data.access_token)
   // salvar o token do usuário
   //localStorage.setItem("token", data.access_token);
   tempToken = data.access_token
@@ -30,10 +28,12 @@ async function request(endpoint, options = {}) {
   //const token = localStorage.getItem("token"); // token do usuário, salvo no login
   const token = tempToken;
 
+  console.log(`endpoint: ${endpoint}`)
+
   const headers = {
     "Content-Type": "application/json",
     "apikey": API_KEY, // obrigatório sempre
-    ...(token ? { Authorization: `Bearer ${token}` } : {}), // obrigatório em todas EXCETO login
+    ...(token ? { "Authorization": `Bearer ${token}` } : {}), // obrigatório em todas EXCETO login
     ...options.headers,
   };
 
