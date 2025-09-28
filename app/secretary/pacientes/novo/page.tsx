@@ -15,6 +15,7 @@ import { Upload, Plus, X, ChevronDown } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from "@/hooks/use-toast";
 import SecretaryLayout from "@/components/secretary-layout";
+import { patientsService } from "@/services/patientsApi.mjs";
 
 export default function NovoPacientePage() {
     const [anexosOpen, setAnexosOpen] = useState(false);
@@ -35,79 +36,64 @@ export default function NovoPacientePage() {
         e.preventDefault();
         if (isLoading) return;
         setIsLoading(true);
-
         const form = e.currentTarget;
         const formData = new FormData(form);
 
         const apiPayload = {
-            nome: formData.get("nome") as string,
-            nome_social: (formData.get("nomeSocial") as string) || null,
-            cpf: formData.get("cpf") as string,
-            rg: (formData.get("rg") as string) || null,
-            outros_documentos:
-                (formData.get("outrosDocumentosTipo") as string) || (formData.get("outrosDocumentosNumero") as string)
-                    ? {
-                          tipo: (formData.get("outrosDocumentosTipo") as string) || undefined,
-                          numero: (formData.get("outrosDocumentosNumero") as string) || undefined,
-                      }
-                    : null,
-            sexo: (formData.get("sexo") as string) || null,
-            data_nascimento: (formData.get("dataNascimento") as string) || null,
-            etnia: (formData.get("etnia") as string) || null,
-            raca: (formData.get("raca") as string) || null,
-            naturalidade: (formData.get("naturalidade") as string) || null,
-            nacionalidade: (formData.get("nacionalidade") as string) || null,
-            profissao: (formData.get("profissao") as string) || null,
-            estado_civil: (formData.get("estadoCivil") as string) || null,
-            nome_mae: (formData.get("nomeMae") as string) || null,
-            profissao_mae: (formData.get("profissaoMae") as string) || null,
-            nome_pai: (formData.get("nomePai") as string) || null,
-            profissao_pai: (formData.get("profissaoPai") as string) || null,
-            nome_responsavel: (formData.get("nomeResponsavel") as string) || null,
-            cpf_responsavel: (formData.get("cpfResponsavel") as string) || null,
-            nome_esposo: (formData.get("nomeEsposo") as string) || null,
-            rn_na_guia_convenio: Boolean(formData.get("rnGuia")),
-            codigo_legado: (formData.get("codigoLegado") as string) || null,
-            contato: {
-                email: (formData.get("email") as string) || null,
-                celular: (formData.get("celular") as string) || null,
-                telefone1: (formData.get("telefone1") as string) || null,
-                telefone2: (formData.get("telefone2") as string) || null,
-            },
-            endereco: {
-                cep: (formData.get("cep") as string) || null,
-                logradouro: (formData.get("endereco") as string) || null,
-                numero: (formData.get("numero") as string) || null,
-                complemento: (formData.get("complemento") as string) || null,
-                bairro: (formData.get("bairro") as string) || null,
-                cidade: (formData.get("cidade") as string) || null,
-                estado: (formData.get("estado") as string) || null,
-                referencia: null,
-            },
-            observacoes: (formData.get("observacoes") as string) || null,
-            // Campos de convênio (opcionais, se a API aceitar)
-            convenio: (formData.get("convenio") as string) || null,
-            plano: (formData.get("plano") as string) || null,
-            numero_matricula: (formData.get("numeroMatricula") as string) || null,
-            validade_carteira: (formData.get("validadeCarteira") as string) || null,
+            full_name: (formData.get("nome") as string) || "", // obrigatório
+            social_name: (formData.get("nomeSocial") as string) || undefined,
+            cpf: (formData.get("cpf") as string) || "", // obrigatório
+            email: (formData.get("email") as string) || "", // obrigatório
+            phone_mobile: (formData.get("celular") as string) || "", // obrigatório
+            birth_date: formData.get("dataNascimento") ? new Date(formData.get("dataNascimento") as string) : undefined,
+            sex: (formData.get("sexo") as string) || undefined,
+            blood_type: (formData.get("tipoSanguineo") as string) || undefined,
+            weight_kg: formData.get("peso") ? parseFloat(formData.get("peso") as string) : undefined,
+            height_m: formData.get("altura") ? parseFloat(formData.get("altura") as string) : undefined,
+            cep: (formData.get("cep") as string) || undefined,
+            street: (formData.get("endereco") as string) || undefined,
+            number: (formData.get("numero") as string) || undefined,
+            complement: (formData.get("complemento") as string) || undefined,
+            neighborhood: (formData.get("bairro") as string) || undefined,
+            city: (formData.get("cidade") as string) || undefined,
+            state: (formData.get("estado") as string) || undefined,
         };
 
         const errors: string[] = [];
-        const nome = apiPayload.nome?.trim() || "";
-        if (!nome || nome.length < 2 || nome.length > 255) errors.push("Nome deve ter entre 2 e 255 caracteres.");
-        const cpf = apiPayload.cpf || "";
-        if (!/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(cpf)) errors.push("CPF deve estar no formato XXX.XXX.XXX-XX.");
-        const sexo = apiPayload.sexo;
-        const allowedSexo = ["masculino", "feminino", "outro"];
-        if (!sexo || !allowedSexo.includes(sexo)) errors.push("Sexo é obrigatório e deve ser masculino, feminino ou outro.");
-        if (!apiPayload.data_nascimento) errors.push("Data de nascimento é obrigatória.");
-        const celular = apiPayload.contato?.celular || "";
-        if (celular && !/^\+55 \(\d{2}\) \d{4,5}-\d{4}$/.test(celular)) errors.push("Celular deve estar no formato +55 (XX) XXXXX-XXXX.");
-        const cep = apiPayload.endereco?.cep || "";
-        if (cep && !/^\d{5}-\d{3}$/.test(cep)) errors.push("CEP deve estar no formato XXXXX-XXX.");
-        const uf = apiPayload.endereco?.estado || "";
-        if (uf && uf.length !== 2) errors.push("Estado (UF) deve ter 2 caracteres.");
+        const fullName = apiPayload.full_name?.trim() || "";
+        if (!fullName || fullName.length < 2 || fullName.length > 255) {
+            errors.push("Nome deve ter entre 2 e 255 caracteres.");
+        }
 
+        const cpf = apiPayload.cpf || "";
+        if (!/^\d{3}\.\d{3}\.\d{3}-\d{2}$/.test(cpf)) {
+            errors.push("CPF deve estar no formato XXX.XXX.XXX-XX.");
+        }
+
+        const sex = apiPayload.sex;
+        const allowedSex = ["masculino", "feminino", "outro"];
+        if (!sex || !allowedSex.includes(sex)) {
+            errors.push("Sexo é obrigatório e deve ser masculino, feminino ou outro.");
+        }
+
+        if (!apiPayload.birth_date) {
+            errors.push("Data de nascimento é obrigatória.");
+        }
+
+        const phoneMobile = apiPayload.phone_mobile || "";
+        if (phoneMobile && !/^\+55 \(\d{2}\) \d{4,5}-\d{4}$/.test(phoneMobile)) {
+            errors.push("Celular deve estar no formato +55 (XX) XXXXX-XXXX.");
+        }
+
+        const cep = apiPayload.cep || "";
+        if (cep && !/^\d{5}-\d{3}$/.test(cep)) {
+            errors.push("CEP deve estar no formato XXXXX-XXX.");
+        }
+
+        const state = apiPayload.state || "";
+        if (state && state.length !== 2) {
+            errors.push("Estado (UF) deve ter 2 caracteres.");
+        }
         if (errors.length) {
             toast({ title: "Corrija os campos", description: errors[0] });
             setIsLoading(false);
@@ -115,27 +101,15 @@ export default function NovoPacientePage() {
         }
 
         try {
-            const res = await fetch("https://mock.apidog.com/m1/1053378-0-default/pacientes", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Accept: "application/json",
-                },
-                body: JSON.stringify(apiPayload),
-            });
-
-            if (!res.ok) {
-                const msg = `Erro ao salvar (HTTP ${res.status})`;
-                throw new Error(msg);
-            }
+            const res = await patientsService.create(apiPayload);
 
             let message = "Paciente cadastrado com sucesso";
             try {
-                const payload = await res.json();
-                if (payload?.success === false) {
-                    throw new Error(payload?.message || "A API retornou erro");
+                if (!res[0].id) {
+                    throw new Error(`${res.error} ${res.message}`|| "A API retornou erro");
+                } else {
+                    console.log(message)
                 }
-                if (payload?.message) message = String(payload.message);
             } catch {}
 
             toast({

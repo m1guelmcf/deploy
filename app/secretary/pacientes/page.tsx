@@ -43,7 +43,6 @@ export default function PacientesPage() {
             setError(null);
             try {
                 const res = await patientsService.list();
-                console.log(res)
                 const mapped = res.map((p: any) => ({
                 id: String(p.id ?? ""),
                 nome: p.full_name ?? "",
@@ -92,9 +91,21 @@ export default function PacientesPage() {
         };
     }, [fetchPacientes, page, hasNext, isFetching]);
 
-    const handleDeletePatient = (patientId: string) => {
+    const handleDeletePatient = async (patientId: string) => {
         // Remove from current list (client-side deletion)
-        setPatients((prev) => prev.filter((p) => String(p.id) !== String(patientId)));
+        try{
+            const res = await patientsService.delete(patientId);
+            
+            if(res){
+                alert(`${res.error} ${res.message}`)
+            }
+            
+            setPatients((prev) => prev.filter((p) => String(p.id) !== String(patientId)));
+            
+
+        } catch (e: any) {
+            setError(e?.message || "Erro ao deletar paciente");
+        }
         setDeleteDialogOpen(false);
         setPatientToDelete(null);
     };
