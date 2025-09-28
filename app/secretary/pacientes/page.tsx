@@ -30,7 +30,6 @@ export default function PacientesPage() {
         setPatientDetails(null);
         try {
             const res = await patientsService.getById(patientId);
-            console.log(res)
         setPatientDetails(res[0]);
         } catch (e: any) {
             setPatientDetails({ error: e?.message || "Erro ao buscar detalhes" });

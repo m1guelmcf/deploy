@@ -17,18 +17,16 @@ async function login() {
   const data = await response.json();
   console.log(data.access_token)
   // salvar o token do usuário
-  //localStorage.setItem("token", data.access_token);
-  tempToken = data.access_token
+  localStorage.setItem("token", data.access_token);
+
   
   return data;
 }
 await login()
 
 async function request(endpoint, options = {}) {
-  //const token = localStorage.getItem("token"); // token do usuário, salvo no login
-  const token = tempToken;
+  const token = localStorage.getItem("token"); // token do usuário, salvo no login
 
-  console.log(`endpoint: ${endpoint}`)
 
   const headers = {
     "Content-Type": "application/json",
