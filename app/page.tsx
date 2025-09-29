@@ -117,7 +117,7 @@ export default function HomePage() {
                   <span>Gestão de usuários</span>
                 </div>
               </div>
-              <Link href="/manager/login" className="block mt-auto">
+              <Link href="#" className="block mt-auto">
                 <Button className="w-full bg-blue-600 hover:bg-blue-700">Entrar como Gestor</Button>
               </Link>
             </CardContent>
@@ -144,7 +144,7 @@ export default function HomePage() {
                   <span>Controle de pagamentos</span>
                 </div>
               </div>
-              <Link href="/finance/login" className="block mt-auto">
+              <Link href="#" className="block mt-auto">
                 <Button className="w-full bg-orange-600 hover:bg-orange-700">Entrar como Financeiro</Button>
               </Link>
             </CardContent>
