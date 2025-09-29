@@ -66,13 +66,13 @@ export default function SecretaryLayout({ children }: PatientLayoutProps) {
 
   const menuItems = [
     {
-      href: "#",
+      href: "##",
       icon: Home,
       label: "Dashboard",
       // Botão para o dashboard da secretária
     },
     {
-      href: "#",
+      href: "###",
       icon: Calendar,
       label: "Consultas",
       // Botão para página de consultas marcadas
