@@ -4,7 +4,7 @@ const BASE_URL = "https://yuanqfswhberkoevtmfr.supabase.co";
 const API_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inl1YW5xZnN3aGJlcmtvZXZ0bWZyIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTQ5NTQzNjksImV4cCI6MjA3MDUzMDM2OX0.g8Fm4XAvtX46zifBZnYVH4tVuQkqUH6Ia9CXQj4DztQ"; 
 var tempToken;
 
-async function login() {
+export async function login() {
   const response = await fetch("https://yuanqfswhberkoevtmfr.supabase.co/auth/v1/token?grant_type=password", {
     method: "POST",
     headers: {
@@ -21,7 +21,11 @@ async function login() {
   
   return data;
 }
-await login()
+
+async function run(){
+  await login()
+}
+run()
 
 async function request(endpoint, options = {}) {
   const token = localStorage.getItem("token"); // token do usuário, salvo no login
@@ -41,10 +45,20 @@ async function request(endpoint, options = {}) {
     });
 
     if (!response.ok) {
+      const text = await response.text();
+      console.error("Erro HTTP:", response.status, text);
       throw new Error(`Erro HTTP: ${response.status}`);
     }
 
-    return await response.json();
+    // Lê a resposta como texto
+    const text = await response.text();
+
+    // Se não tiver conteúdo (204 ou 201 sem body), retorna null
+    if (!text) return null;
+
+    // Se tiver conteúdo, parseia como JSON
+    console.log(JSON.parse(text))
+    return JSON.parse(text);
   } catch (error) {
     console.error("Erro na requisição:", error);
     throw error;

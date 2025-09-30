@@ -71,7 +71,7 @@ export default function NovoPacientePage() {
         }
 
         const sex = apiPayload.sex;
-        const allowedSex = ["masculino", "feminino", "outro"];
+        const allowedSex = ["Masculino", "Feminino", "outro"];
         if (!sex || !allowedSex.includes(sex)) {
             errors.push("Sexo é obrigatório e deve ser masculino, feminino ou outro.");
         }
@@ -102,6 +102,7 @@ export default function NovoPacientePage() {
 
         try {
             const res = await patientsService.create(apiPayload);
+            console.log(res)
 
             let message = "Paciente cadastrado com sucesso";
             try {
@@ -202,11 +203,11 @@ export default function NovoPacientePage() {
                                     <Label className="text-sm font-medium text-gray-700">Sexo</Label>
                                     <div className="flex gap-4 mt-2">
                                         <label className="flex items-center gap-2">
-                                            <input type="radio" name="sexo" value="masculino" className="text-blue-600" />
+                                            <input type="radio" name="sexo" value="Masculino" className="text-blue-600" />
                                             <span className="text-sm">Masculino</span>
                                         </label>
                                         <label className="flex items-center gap-2">
-                                            <input type="radio" name="sexo" value="feminino" className="text-blue-600" />
+                                            <input type="radio" name="sexo" value="Feminino" className="text-blue-600" />
                                             <span className="text-sm">Feminino</span>
                                         </label>
                                     </div>
@@ -438,7 +439,7 @@ export default function NovoPacientePage() {
                                                 <SelectItem value="+55">+55</SelectItem>
                                             </SelectContent>
                                         </Select>
-                                        <Input name="celular" placeholder="(XX) XXXXX-XXXX" className="rounded-l-none" />
+                                        <Input id="celular" name="celular" placeholder="(XX) XXXXX-XXXX" className="rounded-l-none" />
                                     </div>
                                 </div>
                                 <div>

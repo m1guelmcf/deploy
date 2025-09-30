@@ -342,6 +342,7 @@ export default function PacientesPage() {
                                         <p><strong>CEP:</strong> {patientDetails.cep ?? "-"}</p>
                                         <p><strong>Criado em:</strong> {patientDetails.created_at ?? "-"}</p>
                                         <p><strong>Atualizado em:</strong> {patientDetails.updated_at ?? "-"}</p>
+                                        <p><strong>Id:</strong> {patientDetails.id ?? "-"}</p>
                                     </div>
                                 )}
                             </AlertDialogDescription>
