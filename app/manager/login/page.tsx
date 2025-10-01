@@ -29,7 +29,6 @@ export default function ManagerLogin() {
     e.preventDefault()
     setIsLoading(true)
 
-    // Simular autenticação
     setTimeout(() => {
       if (form.email && form.password) {
         const managerData = {

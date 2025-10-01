@@ -1,170 +1,309 @@
 "use client"
 
-import type React from "react"
-
-import { useState, useEffect } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { useRouter, useParams } from "next/navigation"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Checkbox } from "@/components/ui/checkbox"
-import { ArrowLeft, Save } from "lucide-react"
-import Link from "next/link"
+import { Save, Loader2, ArrowLeft } from "lucide-react" 
 import ManagerLayout from "@/components/manager-layout"
+import { doctorsService } from "services/doctorsApi.mjs"; 
 
-// Mock data - in a real app, this would come from an API
-const mockDoctors = [
-  {
-    id: 1,
-    nome: "Dr. Carlos Silva",
-    cpf: "123.456.789-00",
-    rg: "12.345.678-9",
-    sexo: "masculino",
-    dataNascimento: "1980-05-15",
-    etnia: "branca",
-    raca: "caucasiana",
-    naturalidade: "Aracaju",
-    nacionalidade: "brasileira",
-    profissao: "Médico",
-    estadoCivil: "casado",
-    nomeMae: "Ana Silva",
-    nomePai: "José Silva",
-    nomeEsposo: "Maria Silva",
-    crm: "CRM/SE 12345",
-    especialidade: "Cardiologia",
-    email: "carlos@email.com",
-    celular: "(79) 99999-1234",
-    telefone1: "(79) 3214-5678",
-    telefone2: "",
-    cep: "49000-000",
-    endereco: "Rua dos Médicos, 123",
-    numero: "123",
-    complemento: "Sala 101",
-    bairro: "Centro",
-    cidade: "Aracaju",
-    estado: "SE",
-    tipoSanguineo: "A+",
-    peso: "80",
-    altura: "1.80",
-    alergias: "Nenhuma alergia conhecida",
-    convenio: "Particular",
-    plano: "Premium",
-    numeroMatricula: "123456789",
-    validadeCarteira: "2025-12-31",
-    observacoes: "Médico experiente",
-  },
-]
+const UF_LIST = ["AC", "AL", "AP", "AM", "BA", "CE", "DF", "ES", "GO", "MA", "MT", "MS", "MG", "PA", "PB", "PR", "PE", "PI", "RJ", "RN", "RS", "RO", "RR", "SC", "SP", "SE", "TO"];
+
+interface DoctorFormData {
+  nomeCompleto: string; 
+  crm: string;
+  crmEstado: string; 
+  especialidade: string; 
+  cpf: string; 
+  email: string; 
+  dataNascimento: string; 
+  rg: string; 
+  telefoneCelular: string; 
+  telefone2: string; 
+  cep: string; 
+  endereco: string; 
+  numero: string; 
+  complemento: string; 
+  bairro: string; 
+  cidade: string; 
+  estado: string; 
+  ativo: boolean; 
+  observacoes: string;
+}
+const apiMap: { [K in keyof DoctorFormData]: string | null } = {
+  nomeCompleto: 'full_name', crm: 'crm', crmEstado: 'crm_uf', especialidade: 'specialty',
+  cpf: 'cpf', email: 'email', dataNascimento: 'birth_date', rg: 'rg', 
+  telefoneCelular: 'phone_mobile', telefone2: 'phone2', cep: 'cep', 
+  endereco: 'street', numero: 'number', complemento: 'complement', 
+  bairro: 'neighborhood', cidade: 'city', estado: 'state', ativo: 'active',
+  observacoes: null, 
+};
+
+const defaultFormData: DoctorFormData = {
+  nomeCompleto: '', crm: '', crmEstado: '', especialidade: '', cpf: '', email: '', 
+  dataNascimento: '', rg: '', telefoneCelular: '', telefone2: '', cep: '',
+  endereco: '', numero: '', complemento: '', bairro: '', cidade: '', estado: '',
+  ativo: true, observacoes: '',
+};
+
+const cleanNumber = (value: string): string => value.replace(/\D/g, '');
+
+const formatCPF = (value: string): string => {
+    const cleaned = cleanNumber(value).substring(0, 11);
+    return cleaned.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+};
+
+const formatCEP = (value: string): string => {
+    const cleaned = cleanNumber(value).substring(0, 8);
+    return cleaned.replace(/(\d{5})(\d{3})/, '$1-$2');
+};
+
+const formatPhoneMobile = (value: string): string => {
+    const cleaned = cleanNumber(value).substring(0, 11);
+    if (cleaned.length > 10) {
+        return cleaned.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+    }
+    return cleaned.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+};
 
 export default function EditarMedicoPage() {
-  const router = useRouter()
-  const params = useParams()
-  const doctorId = Number.parseInt(params.id as string)
+  const router = useRouter();
+  const params = useParams();
+  const id = Array.isArray(params.id) ? params.id[0] : params.id; 
+  const [formData, setFormData] = useState<DoctorFormData>(defaultFormData);
+  const [loading, setLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const apiToFormMap: { [key: string]: keyof DoctorFormData } = {
+      'full_name': 'nomeCompleto', 'crm': 'crm', 'crm_uf': 'crmEstado', 'specialty': 'especialidade',
+      'cpf': 'cpf', 'email': 'email', 'birth_date': 'dataNascimento', 'rg': 'rg',
+      'phone_mobile': 'telefoneCelular', 'phone2': 'telefone2', 'cep': 'cep', 
+      'street': 'endereco', 'number': 'numero', 'complement': 'complemento', 
+      'neighborhood': 'bairro', 'city': 'cidade', 'state': 'estado', 'active': 'ativo'
+  };
 
-  const [formData, setFormData] = useState({
-    nome: "",
-    cpf: "",
-    rg: "",
-    sexo: "",
-    dataNascimento: "",
-    etnia: "",
-    raca: "",
-    naturalidade: "",
-    nacionalidade: "",
-    profissao: "",
-    estadoCivil: "",
-    nomeMae: "",
-    nomePai: "",
-    nomeEsposo: "",
-    crm: "",
-    especialidade: "",
-    email: "",
-    celular: "",
-    telefone1: "",
-    telefone2: "",
-    cep: "",
-    endereco: "",
-    numero: "",
-    complemento: "",
-    bairro: "",
-    cidade: "",
-    estado: "",
-    tipoSanguineo: "",
-    peso: "",
-    altura: "",
-    alergias: "",
-    convenio: "",
-    plano: "",
-    numeroMatricula: "",
-    validadeCarteira: "",
-    observacoes: "",
-  })
-
-  const [isGuiaConvenio, setIsGuiaConvenio] = useState(false)
-  const [validadeIndeterminada, setValidadeIndeterminada] = useState(false)
-
+ 
   useEffect(() => {
-    // Load doctor data
-    const doctor = mockDoctors.find((d) => d.id === doctorId)
-    if (doctor) {
-      setFormData(doctor)
+    if (!id) return;
+
+    const fetchDoctor = async () => {
+      try {
+        const data = await doctorsService.getById(id);
+
+        if (!data) {
+          setError("Médico não encontrado.");
+          setLoading(false);
+          return;
+        }
+
+        const initialData: Partial<DoctorFormData> = {};
+        
+        Object.keys(data).forEach(key => {
+            const formKey = apiToFormMap[key];
+            if (formKey) {
+                let value = data[key] === null ? '' : data[key];
+                if (formKey === 'ativo') {
+                    value = !!value; 
+                } else if (typeof value !== 'boolean') {
+                    value = String(value);
+                }               
+                initialData[formKey] = value as any;
+            }
+        });
+        initialData.observacoes = "Observação carregada do sistema (exemplo de campo interno)"; 
+        
+        setFormData(prev => ({ ...prev, ...initialData }));
+      } catch (e) {
+        console.error("Erro ao carregar dados:", e);
+        setError("Não foi possível carregar os dados do médico.");
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchDoctor();
+  }, [id]); 
+
+  const handleInputChange = (key: keyof DoctorFormData, value: string | boolean) => {
+    
+   
+    if (typeof value === 'string') {
+        let maskedValue = value;
+        if (key === 'cpf') maskedValue = formatCPF(value);
+        if (key === 'cep') maskedValue = formatCEP(value);
+        if (key === 'telefoneCelular' || key === 'telefone2') maskedValue = formatPhoneMobile(value);
+        
+        setFormData((prev) => ({ ...prev, [key]: maskedValue }));
+    } else {
+        setFormData((prev) => ({ ...prev, [key]: value }));
     }
-  }, [doctorId])
+  };
 
-  const handleInputChange = (field: string, value: string) => {
-    setFormData((prev) => ({ ...prev, [field]: value }))
-  }
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault()
-    console.log("[v0] Updating doctor:", formData)
-    // Here you would typically send the data to your API
-    router.push("/medicos")
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError(null);
+    setIsSaving(true);
+    
+    if (!id) {
+        setError("ID do médico ausente.");
+        setIsSaving(false);
+        return;
+    }
+
+    const finalPayload: { [key: string]: any } = {};
+    const formKeys = Object.keys(formData) as Array<keyof DoctorFormData>;
+
+  
+    formKeys.forEach((key) => {
+        const apiFieldName = apiMap[key];
+        
+        if (!apiFieldName) return; 
+
+        let value = formData[key];
+
+        if (typeof value === 'string') {
+            let trimmedValue = value.trim();         
+            if (trimmedValue === '') {
+                finalPayload[apiFieldName] = null;
+                return;
+            }
+            if (key === 'crmEstado' || key === 'estado') {
+                trimmedValue = trimmedValue.toUpperCase();
+            }
+            
+            value = trimmedValue;
+        }
+        
+        finalPayload[apiFieldName] = value;
+    });
+
+    delete finalPayload.user_id; 
+    try {
+      await doctorsService.update(id, finalPayload); 
+      router.push("/manager/home"); 
+    } catch (e: any) {
+      console.error("Erro ao salvar o médico:", e);
+      let detailedError = "Erro ao atualizar. Verifique os dados e tente novamente.";
+      
+      if (e.message && e.message.includes("duplicate key value violates unique constraint")) {
+           detailedError = "O CPF ou CRM informado já está cadastrado em outro registro.";
+      } else if (e.message && e.message.includes("Detalhes:")) {
+          detailedError = e.message.split("Detalhes:")[1].trim();
+      } else if (e.message) {
+          detailedError = e.message;
+      }
+        
+      setError(`Erro ao atualizar. Detalhes: ${detailedError}`);
+    } finally {
+      setIsSaving(false);
+    }
+  };
+  if (loading) {
+    return (
+        <ManagerLayout>
+            <div className="flex justify-center items-center h-full w-full py-16">
+                <Loader2 className="w-8 h-8 animate-spin text-green-600" />
+                <p className="ml-2 text-gray-600">Carregando dados do médico...</p>
+            </div>
+        </ManagerLayout>
+    );
   }
 
   return (
     <ManagerLayout>
-    <div className="space-y-6">
-      <div className="flex items-center gap-4">
+    <div className="w-full space-y-6 p-4 md:p-8"> 
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-gray-900">
+            Editar Médico: <span className="text-green-600">{formData.nomeCompleto}</span>
+          </h1>
+          <p className="text-sm text-gray-500">
+            Atualize as informações do médico (ID: {id}).
+          </p>
+        </div>
         <Link href="/manager/home">
-          <Button variant="ghost" size="sm">
+          <Button variant="outline">
             <ArrowLeft className="w-4 h-4 mr-2" />
             Voltar
           </Button>
         </Link>
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Editar Médico</h1>
-          <p className="text-gray-600">Atualize as informações do médico</p>
-        </div>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-8">
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-6">Dados Pessoais</h2>
+      <form onSubmit={handleSubmit} className="space-y-6">
+      
+        {error && (
+             <div className="p-3 bg-red-100 text-red-700 rounded-lg border border-red-300">
+                <p className="font-medium">Erro na Atualização:</p>
+                <p className="text-sm">{error}</p>
+            </div>
+        )}
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="nome">Nome *</Label>
+        <div className="space-y-4 p-4 border rounded-xl shadow-sm bg-white">
+          <h2 className="text-lg font-semibold text-gray-800 border-b pb-2">
+            Dados Principais e Pessoais
+          </h2>
+          <div className="grid md:grid-cols-4 gap-4">
+            <div className="space-y-2 col-span-2">
+              <Label htmlFor="nomeCompleto">Nome Completo (full_name)</Label>
               <Input
-                id="nome"
-                value={formData.nome}
-                onChange={(e) => handleInputChange("nome", e.target.value)}
-                required
+                id="nomeCompleto"
+                value={formData.nomeCompleto}
+                onChange={(e) => handleInputChange("nomeCompleto", e.target.value)}
+                placeholder="Nome do Médico"
               />
             </div>
-
+            <div className="space-y-2 col-span-1">
+              <Label htmlFor="crm">CRM</Label>
+              <Input
+                id="crm"
+                value={formData.crm}
+                onChange={(e) => handleInputChange("crm", e.target.value)}
+                placeholder="Ex: 123456"
+              />
+            </div>
+            <div className="space-y-2 col-span-1">
+              <Label htmlFor="crmEstado">UF do CRM (crm_uf)</Label>
+              <Select value={formData.crmEstado} onValueChange={(v) => handleInputChange("crmEstado", v)}>
+                <SelectTrigger id="crmEstado">
+                  <SelectValue placeholder="UF" />
+                </SelectTrigger>
+                <SelectContent>
+                  {UF_LIST.map(uf => (
+                    <SelectItem key={uf} value={uf}>{uf}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+          
+       
+          <div className="grid md:grid-cols-3 gap-4">
+             <div className="space-y-2">
+              <Label htmlFor="especialidade">Especialidade (specialty)</Label>
+              <Input
+                id="especialidade"
+                value={formData.especialidade}
+                onChange={(e) => handleInputChange("especialidade", e.target.value)}
+                placeholder="Ex: Cardiologia"
+              />
+            </div>
             <div className="space-y-2">
-              <Label htmlFor="cpf">CPF *</Label>
+              <Label htmlFor="cpf">CPF</Label>
               <Input
                 id="cpf"
                 value={formData.cpf}
                 onChange={(e) => handleInputChange("cpf", e.target.value)}
                 placeholder="000.000.000-00"
-                required
+                maxLength={14}
               />
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="rg">RG</Label>
               <Input
@@ -174,513 +313,180 @@ export default function EditarMedicoPage() {
                 placeholder="00.000.000-0"
               />
             </div>
-
-            <div className="space-y-2">
-              <Label>Sexo *</Label>
-              <div className="flex gap-4">
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    id="masculino"
-                    name="sexo"
-                    value="masculino"
-                    checked={formData.sexo === "masculino"}
-                    onChange={(e) => handleInputChange("sexo", e.target.value)}
-                    className="w-4 h-4 text-blue-600"
-                  />
-                  <Label htmlFor="masculino">Masculino</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <input
-                    type="radio"
-                    id="feminino"
-                    name="sexo"
-                    value="feminino"
-                    checked={formData.sexo === "feminino"}
-                    onChange={(e) => handleInputChange("sexo", e.target.value)}
-                    className="w-4 h-4 text-blue-600"
-                  />
-                  <Label htmlFor="feminino">Feminino</Label>
-                </div>
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="dataNascimento">Data de nascimento *</Label>
-              <Input
-                id="dataNascimento"
-                type="date"
-                value={formData.dataNascimento}
-                onChange={(e) => handleInputChange("dataNascimento", e.target.value)}
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="etnia">Etnia</Label>
-              <Select value={formData.etnia} onValueChange={(value) => handleInputChange("etnia", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="branca">Branca</SelectItem>
-                  <SelectItem value="preta">Preta</SelectItem>
-                  <SelectItem value="parda">Parda</SelectItem>
-                  <SelectItem value="amarela">Amarela</SelectItem>
-                  <SelectItem value="indigena">Indígena</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="raca">Raça</Label>
-              <Select value={formData.raca} onValueChange={(value) => handleInputChange("raca", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="caucasiana">Caucasiana</SelectItem>
-                  <SelectItem value="negroide">Negroide</SelectItem>
-                  <SelectItem value="mongoloide">Mongoloide</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="naturalidade">Naturalidade</Label>
-              <Input
-                id="naturalidade"
-                value={formData.naturalidade}
-                onChange={(e) => handleInputChange("naturalidade", e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="nacionalidade">Nacionalidade</Label>
-              <Select
-                value={formData.nacionalidade}
-                onValueChange={(value) => handleInputChange("nacionalidade", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="brasileira">Brasileira</SelectItem>
-                  <SelectItem value="estrangeira">Estrangeira</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="profissao">Profissão</Label>
-              <Input
-                id="profissao"
-                value={formData.profissao}
-                onChange={(e) => handleInputChange("profissao", e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="estadoCivil">Estado civil</Label>
-              <Select value={formData.estadoCivil} onValueChange={(value) => handleInputChange("estadoCivil", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="solteiro">Solteiro(a)</SelectItem>
-                  <SelectItem value="casado">Casado(a)</SelectItem>
-                  <SelectItem value="divorciado">Divorciado(a)</SelectItem>
-                  <SelectItem value="viuvo">Viúvo(a)</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="nomeMae">Nome da mãe</Label>
-              <Input
-                id="nomeMae"
-                value={formData.nomeMae}
-                onChange={(e) => handleInputChange("nomeMae", e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="nomePai">Nome do pai</Label>
-              <Input
-                id="nomePai"
-                value={formData.nomePai}
-                onChange={(e) => handleInputChange("nomePai", e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="nomeEsposo">Nome do esposo(a)</Label>
-              <Input
-                id="nomeEsposo"
-                value={formData.nomeEsposo}
-                onChange={(e) => handleInputChange("nomeEsposo", e.target.value)}
-              />
-            </div>
           </div>
-
-          <div className="mt-6">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="guiaConvenio"
-                checked={isGuiaConvenio}
-                onCheckedChange={(checked) => setIsGuiaConvenio(checked === true)}
-              />
-              <Label htmlFor="guiaConvenio">RN na Guia do convênio</Label>
-            </div>
-          </div>
-
-          <div className="mt-6">
-            <Label htmlFor="observacoes">Observações</Label>
-            <Textarea
-              id="observacoes"
-              value={formData.observacoes}
-              onChange={(e) => handleInputChange("observacoes", e.target.value)}
-              placeholder="Digite observações sobre o médico..."
-              className="mt-2"
-            />
-          </div>
-        </div>
-
-        {/* Professional Information Section */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-6">Informações Profissionais</h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="crm">CRM *</Label>
-              <Input
-                id="crm"
-                value={formData.crm}
-                onChange={(e) => handleInputChange("crm", e.target.value)}
-                placeholder="CRM/UF 12345"
-                required
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="especialidade">Especialidade *</Label>
-              <Select
-                value={formData.especialidade}
-                onValueChange={(value) => handleInputChange("especialidade", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione a especialidade" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Cardiologia">Cardiologia</SelectItem>
-                  <SelectItem value="Pediatria">Pediatria</SelectItem>
-                  <SelectItem value="Ortopedia">Ortopedia</SelectItem>
-                  <SelectItem value="Neurologia">Neurologia</SelectItem>
-                  <SelectItem value="Ginecologia">Ginecologia</SelectItem>
-                  <SelectItem value="Dermatologia">Dermatologia</SelectItem>
-                  <SelectItem value="Psiquiatria">Psiquiatria</SelectItem>
-                  <SelectItem value="Oftalmologia">Oftalmologia</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-          </div>
-        </div>
-
-        {/* Contact Section */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-6">Contato</h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="space-y-2">
+          
+          <div className="grid md:grid-cols-4 gap-4">
+            <div className="space-y-2 col-span-2">
               <Label htmlFor="email">E-mail</Label>
               <Input
                 id="email"
                 type="email"
                 value={formData.email}
                 onChange={(e) => handleInputChange("email", e.target.value)}
+                placeholder="exemplo@dominio.com"
               />
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="celular">Celular</Label>
+             <div className="space-y-2 col-span-1">
+              <Label htmlFor="dataNascimento">Data de Nascimento (birth_date)</Label>
               <Input
-                id="celular"
-                value={formData.celular}
-                onChange={(e) => handleInputChange("celular", e.target.value)}
-                placeholder="(00) 00000-0000"
+                id="dataNascimento"
+                type="date"
+                value={formData.dataNascimento}
+                onChange={(e) => handleInputChange("dataNascimento", e.target.value)}
               />
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="telefone1">Telefone 1</Label>
-              <Input
-                id="telefone1"
-                value={formData.telefone1}
-                onChange={(e) => handleInputChange("telefone1", e.target.value)}
-                placeholder="(00) 0000-0000"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="telefone2">Telefone 2</Label>
-              <Input
-                id="telefone2"
-                value={formData.telefone2}
-                onChange={(e) => handleInputChange("telefone2", e.target.value)}
-                placeholder="(00) 0000-0000"
-              />
+            <div className="space-y-2 flex items-end justify-center pb-1">
+                <div className="flex items-center space-x-2">
+                    <Checkbox
+                        id="ativo"
+                        checked={formData.ativo}
+                        onCheckedChange={(checked) => handleInputChange("ativo", checked === true)}
+                    />
+                    <Label htmlFor="ativo">Médico Ativo (active)</Label>
+                </div>
             </div>
           </div>
         </div>
 
-        {/* Address Section */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-6">Endereço</h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div className="space-y-4 p-4 border rounded-xl shadow-sm bg-white">
+          <h2 className="text-lg font-semibold text-gray-800 border-b pb-2">
+            Contato e Endereço
+          </h2>
+        
+          <div className="grid md:grid-cols-2 gap-4">
             <div className="space-y-2">
-              <Label htmlFor="cep">CEP</Label>
+              <Label htmlFor="telefoneCelular">Telefone Celular (phone_mobile)</Label>
               <Input
-                id="cep"
-                value={formData.cep}
-                onChange={(e) => handleInputChange("cep", e.target.value)}
-                placeholder="00000-000"
+                id="telefoneCelular"
+                value={formData.telefoneCelular}
+                onChange={(e) => handleInputChange("telefoneCelular", e.target.value)}
+                placeholder="(00) 00000-0000"
+                maxLength={15}
               />
             </div>
-
             <div className="space-y-2">
-              <Label htmlFor="endereco">Endereço</Label>
+              <Label htmlFor="telefone2">Telefone Adicional (phone2)</Label>
               <Input
-                id="endereco"
-                value={formData.endereco}
-                onChange={(e) => handleInputChange("endereco", e.target.value)}
+                id="telefone2"
+                value={formData.telefone2}
+                onChange={(e) => handleInputChange("telefone2", e.target.value)}
+                placeholder="(00) 00000-0000"
+                maxLength={15}
               />
             </div>
+          </div>
 
-            <div className="space-y-2">
+          
+          <div className="grid md:grid-cols-4 gap-4">
+              <div className="space-y-2 col-span-1">
+                  <Label htmlFor="cep">CEP</Label>
+                  <Input 
+                      id="cep" 
+                      value={formData.cep}
+                      onChange={(e) => handleInputChange("cep", e.target.value)}
+                      placeholder="00000-000" 
+                      maxLength={9}
+                  />
+              </div>
+              <div className="space-y-2 col-span-3">
+                  <Label htmlFor="endereco">Logradouro (street)</Label>
+                  <Input 
+                      id="endereco" 
+                      value={formData.endereco}
+                      onChange={(e) => handleInputChange("endereco", e.target.value)}
+                      placeholder="Rua, Avenida, etc." 
+                  />
+              </div>
+          </div>
+        
+          <div className="grid md:grid-cols-4 gap-4">
+            <div className="space-y-2 col-span-1">
               <Label htmlFor="numero">Número</Label>
               <Input
                 id="numero"
                 value={formData.numero}
                 onChange={(e) => handleInputChange("numero", e.target.value)}
+                placeholder="123"
               />
             </div>
-
-            <div className="space-y-2">
+            <div className="space-y-2 col-span-3">
               <Label htmlFor="complemento">Complemento</Label>
               <Input
                 id="complemento"
                 value={formData.complemento}
                 onChange={(e) => handleInputChange("complemento", e.target.value)}
+                placeholder="Apto, Bloco, etc."
               />
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="bairro">Bairro</Label>
-              <Input
-                id="bairro"
-                value={formData.bairro}
-                onChange={(e) => handleInputChange("bairro", e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="cidade">Cidade</Label>
-              <Input
-                id="cidade"
-                value={formData.cidade}
-                onChange={(e) => handleInputChange("cidade", e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="estado">Estado</Label>
-              <Select value={formData.estado} onValueChange={(value) => handleInputChange("estado", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="AC">Acre</SelectItem>
-                  <SelectItem value="AL">Alagoas</SelectItem>
-                  <SelectItem value="AP">Amapá</SelectItem>
-                  <SelectItem value="AM">Amazonas</SelectItem>
-                  <SelectItem value="BA">Bahia</SelectItem>
-                  <SelectItem value="CE">Ceará</SelectItem>
-                  <SelectItem value="DF">Distrito Federal</SelectItem>
-                  <SelectItem value="ES">Espírito Santo</SelectItem>
-                  <SelectItem value="GO">Goiás</SelectItem>
-                  <SelectItem value="MA">Maranhão</SelectItem>
-                  <SelectItem value="MT">Mato Grosso</SelectItem>
-                  <SelectItem value="MS">Mato Grosso do Sul</SelectItem>
-                  <SelectItem value="MG">Minas Gerais</SelectItem>
-                  <SelectItem value="PA">Pará</SelectItem>
-                  <SelectItem value="PB">Paraíba</SelectItem>
-                  <SelectItem value="PR">Paraná</SelectItem>
-                  <SelectItem value="PE">Pernambuco</SelectItem>
-                  <SelectItem value="PI">Piauí</SelectItem>
-                  <SelectItem value="RJ">Rio de Janeiro</SelectItem>
-                  <SelectItem value="RN">Rio Grande do Norte</SelectItem>
-                  <SelectItem value="RS">Rio Grande do Sul</SelectItem>
-                  <SelectItem value="RO">Rondônia</SelectItem>
-                  <SelectItem value="RR">Roraima</SelectItem>
-                  <SelectItem value="SC">Santa Catarina</SelectItem>
-                  <SelectItem value="SP">São Paulo</SelectItem>
-                  <SelectItem value="SE">Sergipe</SelectItem>
-                  <SelectItem value="TO">Tocantins</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
+          </div>
+          
+          <div className="grid md:grid-cols-4 gap-4">
+              <div className="space-y-2 col-span-2">
+                  <Label htmlFor="bairro">Bairro</Label>
+                  <Input
+                      id="bairro"
+                      value={formData.bairro}
+                      onChange={(e) => handleInputChange("bairro", e.target.value)}
+                      placeholder="Bairro"
+                  />
+              </div>
+              <div className="space-y-2 col-span-1">
+                  <Label htmlFor="cidade">Cidade</Label>
+                  <Input
+                      id="cidade"
+                      value={formData.cidade}
+                      onChange={(e) => handleInputChange("cidade", e.target.value)}
+                      placeholder="São Paulo"
+                  />
+              </div>
+              <div className="space-y-2 col-span-1">
+                  <Label htmlFor="estado">Estado (state)</Label>
+                  <Input
+                      id="estado"
+                      value={formData.estado}
+                      onChange={(e) => handleInputChange("estado", e.target.value)}
+                      placeholder="SP"
+                  />
+              </div>
           </div>
         </div>
 
-        {/* Medical Information Section */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-6">Informações Médicas</h2>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="tipoSanguineo">Tipo Sanguíneo</Label>
-              <Select
-                value={formData.tipoSanguineo}
-                onValueChange={(value) => handleInputChange("tipoSanguineo", value)}
-              >
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="A+">A+</SelectItem>
-                  <SelectItem value="A-">A-</SelectItem>
-                  <SelectItem value="B+">B+</SelectItem>
-                  <SelectItem value="B-">B-</SelectItem>
-                  <SelectItem value="AB+">AB+</SelectItem>
-                  <SelectItem value="AB-">AB-</SelectItem>
-                  <SelectItem value="O+">O+</SelectItem>
-                  <SelectItem value="O-">O-</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="peso">Peso (kg)</Label>
-              <Input
-                id="peso"
-                type="number"
-                value={formData.peso}
-                onChange={(e) => handleInputChange("peso", e.target.value)}
-                placeholder="0.0"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="altura">Altura (m)</Label>
-              <Input
-                id="altura"
-                type="number"
-                step="0.01"
-                value={formData.altura}
-                onChange={(e) => handleInputChange("altura", e.target.value)}
-                placeholder="0.00"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label>IMC</Label>
-              <Input
-                value={
-                  formData.peso && formData.altura
-                    ? (Number.parseFloat(formData.peso) / Number.parseFloat(formData.altura) ** 2).toFixed(2)
-                    : ""
-                }
-                disabled
-                placeholder="Calculado automaticamente"
-              />
-            </div>
-          </div>
-
-          <div className="mt-6">
-            <Label htmlFor="alergias">Alergias</Label>
-            <Textarea
-              id="alergias"
-              value={formData.alergias}
-              onChange={(e) => handleInputChange("alergias", e.target.value)}
-              placeholder="Ex: AAS, Dipirona, etc."
-              className="mt-2"
-            />
-          </div>
+      
+        <div className="space-y-4 p-4 border rounded-xl shadow-sm bg-white">
+          <h2 className="text-lg font-semibold text-gray-800 border-b pb-2">
+            Observações (Apenas internas)
+          </h2>
+          <Textarea 
+              id="observacoes"
+              value={formData.observacoes}
+              onChange={(e) => handleInputChange("observacoes", e.target.value)}
+              placeholder="Notas internas sobre o médico..."
+              className="min-h-[100px]"
+          />
         </div>
 
-        {/* Insurance Information Section */}
-        <div className="bg-white rounded-lg border border-gray-200 p-6">
-          <h2 className="text-lg font-semibold text-gray-900 mb-6">Informações de convênio</h2>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <div className="space-y-2">
-              <Label htmlFor="convenio">Convênio</Label>
-              <Select value={formData.convenio} onValueChange={(value) => handleInputChange("convenio", value)}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Selecione" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="Particular">Particular</SelectItem>
-                  <SelectItem value="SUS">SUS</SelectItem>
-                  <SelectItem value="Unimed">Unimed</SelectItem>
-                  <SelectItem value="Bradesco">Bradesco Saúde</SelectItem>
-                  <SelectItem value="Amil">Amil</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="plano">Plano</Label>
-              <Input id="plano" value={formData.plano} onChange={(e) => handleInputChange("plano", e.target.value)} />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="numeroMatricula">Nº de matrícula</Label>
-              <Input
-                id="numeroMatricula"
-                value={formData.numeroMatricula}
-                onChange={(e) => handleInputChange("numeroMatricula", e.target.value)}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="validadeCarteira">Validade da Carteira</Label>
-              <Input
-                id="validadeCarteira"
-                type="date"
-                value={formData.validadeCarteira}
-                onChange={(e) => handleInputChange("validadeCarteira", e.target.value)}
-                disabled={validadeIndeterminada}
-              />
-            </div>
-          </div>
-
-          <div className="mt-4">
-            <div className="flex items-center space-x-2">
-              <Checkbox
-                id="validadeIndeterminada"
-                checked={validadeIndeterminada}
-                onCheckedChange={(checked) => setValidadeIndeterminada(checked === true)}
-              />
-              <Label htmlFor="validadeIndeterminada">Validade Indeterminada</Label>
-            </div>
-          </div>
-        </div>
-
-        <div className="flex justify-end gap-4">
+        <div className="flex justify-end gap-4 pb-8 pt-4">
           <Link href="/manager/home">
-            <Button type="button" variant="outline">
+            <Button type="button" variant="outline" disabled={isSaving}>
               Cancelar
             </Button>
           </Link>
-          <Button type="submit" className="bg-green-600 hover:bg-green-700">
-            <Save className="w-4 h-4 mr-2" />
-            Salvar Alterações
+          <Button 
+            type="submit" 
+            className="bg-green-600 hover:bg-green-700"
+            disabled={isSaving}
+          >
+            {isSaving ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+                <Save className="w-4 h-4 mr-2" />
+            )}
+            {isSaving ? "Salvando..." : "Salvar Alterações"}
           </Button>
         </div>
       </form>
     </div>
-  </ManagerLayout>
-  )
+    </ManagerLayout>
+  );
 }
