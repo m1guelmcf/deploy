@@ -9,6 +9,7 @@ export async function login() {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
+      Prefer: "return=representation",
       "apikey": API_KEY, // valor fixo
     },
     body: JSON.stringify({ email: "riseup@popcode.com.br", password: "riseup" }),
@@ -57,7 +58,6 @@ async function request(endpoint, options = {}) {
     if (!text) return null;
 
     // Se tiver conteúdo, parseia como JSON
-    console.log(JSON.parse(text))
     return JSON.parse(text);
   } catch (error) {
     console.error("Erro na requisição:", error);

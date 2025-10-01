@@ -228,16 +228,21 @@ export default function EditarPacientePage() {
             cep: formData.cep || null,
         };
 
-        console.log(payload)
-        console.log(JSON.stringify(payload))
-
         try {
-            const res = await patientsService.update(patientId, JSON.stringify(payload));
-            console.log(res[0])
+            await patientsService.update(patientId, payload);
+            toast({
+                title: "Sucesso",
+                description: "Paciente atualizado com sucesso",
+                variant: "default"
+            });
             router.push("/secretary/pacientes");
         } catch (err: any) {
-            toast({ title: "Erro", description: err?.message || "Não foi possível atualizar o paciente" });
-            console.log("deu ruim")
+            console.error("Erro ao atualizar paciente:", err);
+            toast({ 
+                title: "Erro", 
+                description: err?.message || "Não foi possível atualizar o paciente",
+                variant: "destructive"
+            });
         }
     };
 
@@ -472,13 +477,13 @@ export default function EditarPacientePage() {
 
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                             <div className="space-y-2">
-                                <Label htmlFor="email">E-mail</Label>
-                                <Input id="email" type="email" value={formData.email} onChange={(e) => handleInputChange("email", e.target.value)} />
+                                <Label htmlFor="email">E-mail *</Label>
+                                <Input id="email" type="email" value={formData.email} onChange={(e) => handleInputChange("email", e.target.value)} required/>
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="celular">Celular</Label>
-                                <Input id="celular" value={formData.phoneMobile} onChange={(e) => handleInputChange("phoneMobile", e.target.value)} placeholder="(00) 00000-0000" />
+                                <Label htmlFor="celular">Celular *</Label>
+                                <Input id="celular" value={formData.phoneMobile} onChange={(e) => handleInputChange("phoneMobile", e.target.value)} placeholder="(00) 00000-0000" required/>
                             </div>
 
                             <div className="space-y-2">

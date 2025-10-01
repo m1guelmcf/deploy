@@ -32,6 +32,27 @@ export default function NovoPacientePage() {
         setAnexos(anexos.filter((_, i) => i !== index));
     };
 
+
+    const cleanNumber = (value: string): string => value.replace(/\D/g, '');
+
+    const formatCPF = (value: string): string => {
+        const cleaned = cleanNumber(value).substring(0, 11);
+        return cleaned.replace(/(\d{3})(\d{3})(\d{3})(\d{2})/, '$1.$2.$3-$4');
+    };
+
+    const formatCEP = (value: string): string => {
+        const cleaned = cleanNumber(value).substring(0, 8);
+        return cleaned.replace(/(\d{5})(\d{3})/, '$1-$2');
+    };
+
+    const formatPhoneMobile = (value: string): string => {
+        const cleaned = cleanNumber(value).substring(0, 11);
+        if (cleaned.length > 10) {
+            return cleaned.replace(/(\d{2})(\d{5})(\d{4})/, '+55 ($1) $2-$3');
+        }
+        return cleaned.replace(/(\d{2})(\d{4})(\d{4})/, '+55 ($1) $2-$3');
+    };
+
     const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
         e.preventDefault();
         if (isLoading) return;
@@ -42,15 +63,15 @@ export default function NovoPacientePage() {
         const apiPayload = {
             full_name: (formData.get("nome") as string) || "", // obrigatório
             social_name: (formData.get("nomeSocial") as string) || undefined,
-            cpf: (formData.get("cpf") as string) || "", // obrigatório
+            cpf: (formatCPF(formData.get("cpf") as string)) || "", // obrigatório
             email: (formData.get("email") as string) || "", // obrigatório
-            phone_mobile: (formData.get("celular") as string) || "", // obrigatório
+            phone_mobile: (formatPhoneMobile(formData.get("celular") as string)) || "", // obrigatório
             birth_date: formData.get("dataNascimento") ? new Date(formData.get("dataNascimento") as string) : undefined,
             sex: (formData.get("sexo") as string) || undefined,
             blood_type: (formData.get("tipoSanguineo") as string) || undefined,
             weight_kg: formData.get("peso") ? parseFloat(formData.get("peso") as string) : undefined,
             height_m: formData.get("altura") ? parseFloat(formData.get("altura") as string) : undefined,
-            cep: (formData.get("cep") as string) || undefined,
+            cep: (formatCEP(formData.get("cep") as string)) || undefined,
             street: (formData.get("endereco") as string) || undefined,
             number: (formData.get("numero") as string) || undefined,
             complement: (formData.get("complemento") as string) || undefined,
@@ -58,6 +79,10 @@ export default function NovoPacientePage() {
             city: (formData.get("cidade") as string) || undefined,
             state: (formData.get("estado") as string) || undefined,
         };
+
+        console.log(apiPayload.email)
+        console.log(apiPayload.cep)
+        console.log(apiPayload.phone_mobile)
 
         const errors: string[] = [];
         const fullName = apiPayload.full_name?.trim() || "";
@@ -96,6 +121,7 @@ export default function NovoPacientePage() {
         }
         if (errors.length) {
             toast({ title: "Corrija os campos", description: errors[0] });
+            console.log("campos errados")
             setIsLoading(false);
             return;
         }
@@ -200,23 +226,23 @@ export default function NovoPacientePage() {
 
                             <div className="grid md:grid-cols-3 gap-4">
                                 <div>
-                                    <Label className="text-sm font-medium text-gray-700">Sexo</Label>
+                                    <Label className="text-sm font-medium text-gray-700">Sexo *</Label>
                                     <div className="flex gap-4 mt-2">
                                         <label className="flex items-center gap-2">
-                                            <input type="radio" name="sexo" value="Masculino" className="text-blue-600" />
+                                            <input type="radio" name="sexo" value="Masculino" className="text-blue-600" required/>
                                             <span className="text-sm">Masculino</span>
                                         </label>
                                         <label className="flex items-center gap-2">
-                                            <input type="radio" name="sexo" value="Feminino" className="text-blue-600" />
+                                            <input type="radio" name="sexo" value="Feminino" className="text-blue-600" required/>
                                             <span className="text-sm">Feminino</span>
                                         </label>
                                     </div>
                                 </div>
                                 <div>
                                     <Label htmlFor="dataNascimento" className="text-sm font-medium text-gray-700">
-                                        Data de Nascimento
+                                        Data de Nascimento *
                                     </Label>
-                                    <Input id="dataNascimento" name="dataNascimento" type="date" className="mt-1" />
+                                    <Input id="dataNascimento" name="dataNascimento" type="date" className="mt-1" required/>
                                 </div>
                                 <div>
                                     <Label htmlFor="estadoCivil" className="text-sm font-medium text-gray-700">
@@ -422,13 +448,13 @@ export default function NovoPacientePage() {
                             <div className="grid md:grid-cols-3 gap-4">
                                 <div>
                                     <Label htmlFor="email" className="text-sm font-medium text-gray-700">
-                                        E-mail
+                                        E-mail *
                                     </Label>
-                                    <Input id="email" name="email" type="email" placeholder="email@exemplo.com" className="mt-1" />
+                                    <Input id="email" name="email" type="email" placeholder="email@exemplo.com" className="mt-1" required/>
                                 </div>
                                 <div>
                                     <Label htmlFor="celular" className="text-sm font-medium text-gray-700">
-                                        Celular
+                                        Celular *
                                     </Label>
                                     <div className="flex mt-1">
                                         <Select>
@@ -439,7 +465,7 @@ export default function NovoPacientePage() {
                                                 <SelectItem value="+55">+55</SelectItem>
                                             </SelectContent>
                                         </Select>
-                                        <Input id="celular" name="celular" placeholder="(XX) XXXXX-XXXX" className="rounded-l-none" />
+                                        <Input id="celular" name="celular" placeholder="(XX) XXXXX-XXXX" className="rounded-l-none" required/>
                                     </div>
                                 </div>
                                 <div>
