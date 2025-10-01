@@ -1,12 +1,13 @@
 "use client";
 
-import React, { useEffect, useState } from "react"
+import React, { useEffect, useState, useCallback } from "react"
 import ManagerLayout from "@/components/manager-layout";
 import Link from "next/link"
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Plus, Edit, Trash2, Eye, Calendar, Filter } from "lucide-react"
+import { Plus, Edit, Trash2, Eye, Calendar, Filter, MoreVertical, Loader2 } from "lucide-react"
 import {
   AlertDialog,
   AlertDialogAction,
@@ -18,283 +19,306 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog"
 
+import { doctorsService } from "services/doctorsApi.mjs";
+
+
+interface Doctor {
+    id: number;
+    full_name: string;
+    specialty: string;
+    crm: string;
+    phone_mobile: string | null;
+    city: string | null;
+    state: string | null;
+    
+}
+
+
+interface DoctorDetails {
+  nome: string;
+  crm: string;
+  especialidade: string;
+ 
+  contato: {
+    celular?: string;
+    telefone1?: string;
+  }
+  endereco: {
+    cidade?: string;
+    estado?: string;
+  }
+  convenio?: string;
+  vip?: boolean;
+  status?: string;
+  ultimo_atendimento?: string;
+  proximo_atendimento?: string;
+  error?: string;
+}
+
 export default function DoctorsPage() {
+  const router = useRouter();
+
+
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
+  const [doctorDetails, setDoctorDetails] = useState<DoctorDetails | null>(null);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [doctorToDeleteId, setDoctorToDeleteId] = useState<number | null>(null);
   
-    const [detailsDialogOpen, setDetailsDialogOpen] = useState(false)
-  const [doctorDetails, setDoctorDetails] = useState<any | null>(null)
-  const openDetailsDialog = async (doctorId: string) => {
-    setDetailsDialogOpen(true)
-    setDoctorDetails(null)
-    try {
-      const res = await fetch(`https://mock.apidog.com/m1/1053378-0-default/pacientes/${doctorId}`)
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const json = await res.json()
-      setDoctorDetails(json?.data ?? null)
-    } catch (e: any) {
-      setDoctorDetails({ error: e?.message || "Erro ao buscar detalhes" })
-    }
-  }
-  const [searchTerm, setSearchTerm] = useState("")
-  const [especialidadeFilter, setEspecialidadeFilter] = useState("all")
-  const [statusFilter, setStatusFilter] = useState("all")
-  const [doctors, setDoctors] = useState<any[]>([])
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
-  const [doctorToDelete, setDoctorToDelete] = useState<string | null>(null)
-  const [page, setPage] = useState(1)
-  const [hasNext, setHasNext] = useState(true)
-  const [isFetching, setIsFetching] = useState(false)
-  const observerRef = React.useRef<HTMLDivElement | null>(null)
+ 
 
-  const fetchMedicos = React.useCallback(async (pageToFetch: number) => {
-    if (isFetching || !hasNext) return
-    setIsFetching(true)
-    setError(null)
+  
+  const fetchDoctors = useCallback(async () => {
+    setLoading(true);
+    setError(null);
     try {
-      const res = await fetch(`https://mock.apidog.com/m1/1053378-0-default/pacientes?page=${pageToFetch}&limit=20`)
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
-      const json = await res.json()
-      const items = Array.isArray(json?.data) ? json.data : []
-      const mapped = items.map((p: any) => ({
-        id: String(p.id ?? ""),
-        nome: p.nome ?? "",
-        crm: p.crm ?? "", // mock não tem crm, pode deixar vazio
-        especialidade: p.especialidade ?? "", // mock não tem especialidade, pode deixar vazio
-        telefone: p?.contato?.celular ?? p?.contato?.telefone1 ?? p?.telefone ?? "",
-        cidade: p?.endereco?.cidade ?? p?.cidade ?? "",
-        estado: p?.endereco?.estado ?? p?.estado ?? "",
-        ultimoAtendimento: p.ultimo_atendimento ?? p.ultimoAtendimento ?? "",
-        proximoAtendimento: p.proximo_atendimento ?? p.proximoAtendimento ?? "",
-        status: p.status ?? "",
-      }))
-      setDoctors((prev) => [...prev, ...mapped])
-      setHasNext(Boolean(json?.pagination?.has_next))
-      setPage(pageToFetch + 1)
+      
+      const data: Doctor[] = await doctorsService.list();
+      setDoctors(data || []); 
     } catch (e: any) {
-      setError(e?.message || "Erro ao buscar médicos")
+      console.error("Erro ao carregar lista de médicos:", e);
+      setError("Não foi possível carregar a lista de médicos. Verifique a conexão com a API.");
+      setDoctors([]);
     } finally {
-      setIsFetching(false)
+      setLoading(false);
     }
-  }, [isFetching, hasNext])
+  }, []);
 
-  React.useEffect(() => {
-    fetchMedicos(page)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [])
+ 
+  useEffect(() => {
+    fetchDoctors();
+  }, [fetchDoctors]);
 
-  React.useEffect(() => {
-    if (!observerRef.current || !hasNext) return
-    const observer = new window.IntersectionObserver((entries) => {
-      if (entries[0].isIntersecting && !isFetching && hasNext) {
-        fetchMedicos(page)
-      }
-    })
-    observer.observe(observerRef.current)
-    return () => {
-      if (observerRef.current) observer.unobserve(observerRef.current)
-    }
-  }, [fetchMedicos, page, hasNext, isFetching])
 
-  const handleDeleteDoctor = async (doctorId: string) => {
+  const openDetailsDialog = async (doctor: Doctor) => {
+    setDetailsDialogOpen(true);
+   
+    setDoctorDetails({
+        nome: doctor.full_name,
+        crm: doctor.crm,
+        especialidade: doctor.specialty,
+        contato: {
+            celular: doctor.phone_mobile ?? undefined,
+            telefone1: undefined 
+        },
+        endereco: {
+            cidade: doctor.city ?? undefined,
+            estado: doctor.state ?? undefined,
+        },
+      
+        convenio: "Particular", 
+        vip: false, 
+        status: "Ativo",
+        ultimo_atendimento: "N/A",
+        proximo_atendimento: "N/A",
+    });
+  };
+
+ 
+  const handleDelete = async () => {
+    if (doctorToDeleteId === null) return;
+
+    setLoading(true);
     try {
-      await fetch(`https://mock.apidog.com/m1/1053378-0-default/pacientes/${doctorId}`, {
-        method: "DELETE",
-      })
-    } catch { }
-    setDoctors((prev) => prev.filter((doctor) => String(doctor.id) !== String(doctorId)))
-    setDeleteDialogOpen(false)
-    setDoctorToDelete(null)
-  }
+      await doctorsService.delete(doctorToDeleteId);
+     
+      console.log(`Médico com ID ${doctorToDeleteId} excluído com sucesso!`);
 
-  const openDeleteDialog = (doctorId: string) => {
-    setDoctorToDelete(doctorId)
-    setDeleteDialogOpen(true)
-  }
+      setDeleteDialogOpen(false);
+      setDoctorToDeleteId(null);
+      await fetchDoctors(); 
+    } catch (e) {
+      console.error("Erro ao excluir:", e);
+      
+      alert("Erro ao excluir médico.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
-  const filteredDoctors = doctors.filter((doctor) => {
-    const matchesSearch =
-      doctor.nome.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      doctor.crm.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      doctor.telefone.includes(searchTerm)
-    const matchesEspecialidade = especialidadeFilter === "all" || doctor.especialidade === especialidadeFilter
-    const matchesStatus = statusFilter === "all" || doctor.status === statusFilter
+  const openDeleteDialog = (doctorId: number) => {
+    setDoctorToDeleteId(doctorId);
+    setDeleteDialogOpen(true);
+  };
+  
 
-    return matchesSearch && matchesEspecialidade && matchesStatus
-  })
+  const handleEdit = (doctorId: number) => {
+   
+    router.push(`/manager/home/${doctorId}/editar`);
+  };
+
 
   return (
     <ManagerLayout>
-      <div className="space-y-6">
-      {/* ...layout e filtros... */}
+    <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Médicos</h1>
-          <p className="text-gray-600">Gerencie as informações dos médicos</p>
+          <h1 className="text-2xl font-bold text-gray-900">Médicos Cadastrados</h1>
+          <p className="text-sm text-gray-500">Gerencie todos os profissionais de saúde.</p>
         </div>
         <Link href="/manager/home/novo">
           <Button className="bg-green-600 hover:bg-green-700">
             <Plus className="w-4 h-4 mr-2" />
-            Adicionar
+            Adicionar Novo
           </Button>
         </Link>
       </div>
-      <div className="flex items-center gap-4 bg-white p-4 rounded-lg border border-gray-200">
-        {/* ...filtros... */}
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-gray-700">Especialidade</span>
-          <Select value={especialidadeFilter} onValueChange={setEspecialidadeFilter}>
-            <SelectTrigger className="w-40">
-              <SelectValue placeholder="Selecione a Especialidade" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todas</SelectItem>
-              <SelectItem value="Cardiologia">Cardiologia</SelectItem>
-              <SelectItem value="Pediatria">Pediatria</SelectItem>
-              <SelectItem value="Ortopedia">Ortopedia</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="flex items-center gap-2">
-          <span className="text-sm font-medium text-gray-700">Status</span>
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-32">
-              <SelectValue placeholder="Selecione" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">Todos</SelectItem>
-              <SelectItem value="Ativo">Ativo</SelectItem>
-              <SelectItem value="Inativo">Inativo</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <Button variant="outline" className="ml-auto bg-transparent">
-          <Filter className="w-4 h-4 mr-2" />
-          Filtro avançado
-        </Button>
+
+      
+      <div className="flex items-center space-x-4 bg-white p-4 rounded-lg border border-gray-200">
+        <Filter className="w-5 h-5 text-gray-400" />
+        <Select>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Especialidade" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="cardiologia">Cardiologia</SelectItem>
+            <SelectItem value="dermatologia">Dermatologia</SelectItem>
+            <SelectItem value="pediatria">Pediatria</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select>
+          <SelectTrigger className="w-[180px]">
+            <SelectValue placeholder="Status" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="ativo">Ativo</SelectItem>
+            <SelectItem value="ferias">Férias</SelectItem>
+            <SelectItem value="inativo">Inativo</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
-      <div className="bg-white rounded-lg border border-gray-200">
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
-              <tr>
-                <th className="text-left p-4 font-medium text-gray-700">Nome</th>
-                <th className="text-left p-4 font-medium text-gray-700">CRM</th>
-                <th className="text-left p-4 font-medium text-gray-700">Telefone</th>
-                <th className="text-left p-4 font-medium text-gray-700">Cidade</th>
-                <th className="text-left p-4 font-medium text-gray-700">Estado</th>
-                <th className="text-left p-4 font-medium text-gray-700">Último atendimento</th>
-                <th className="text-left p-4 font-medium text-gray-700">Próximo atendimento</th>
-                <th className="text-left p-4 font-medium text-gray-700">Ações</th>
-              </tr>
-            </thead>
-            <tbody>
-              {error ? (
+
+      
+      <div className="bg-white rounded-lg border border-gray-200 shadow-md overflow-hidden">
+        {loading ? (
+            <div className="p-8 text-center text-gray-500">
+                <Loader2 className="w-8 h-8 animate-spin mx-auto mb-3 text-green-600" />
+                Carregando médicos...
+            </div>
+        ) : error ? (
+            <div className="p-8 text-center text-red-600">
+                {error}
+            </div>
+        ) : doctors.length === 0 ? (
+            <div className="p-8 text-center text-gray-500">
+                Nenhum médico cadastrado. <Link href="/manager/home/novo" className="text-green-600 hover:underline">Adicione um novo</Link>.
+            </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-gray-200">
+              <thead className="bg-gray-50">
                 <tr>
-                  <td colSpan={8} className="p-6 text-red-600">{`Erro: ${error}`}</td>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Nome</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">CRM</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Especialidade</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Celular</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Cidade/Estado</th>
+                  <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Ações</th>
                 </tr>
-              ) : filteredDoctors.length === 0 ? (
-                <tr>
-                  <td colSpan={8} className="p-8 text-center text-gray-500">Nenhum registro encontrado</td>
-                </tr>
-              ) : (
-                filteredDoctors.map((doctor) => (
-                  <tr key={doctor.id} className="border-b border-gray-100 hover:bg-gray-50">
-                    <td className="p-4">
-                      <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                          <span className="text-gray-600 font-medium text-sm">{doctor.nome?.charAt(0) || "?"}</span>
-                        </div>
-                        <span className="font-medium text-gray-900">{doctor.nome}</span>
+              </thead>
+              <tbody className="bg-white divide-y divide-gray-200">
+                {doctors.map((doctor) => (
+                  <tr key={doctor.id} className="hover:bg-gray-50">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-900">{doctor.full_name}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{doctor.crm}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{doctor.specialty}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">{doctor.phone_mobile || "N/A"}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-500">
+                        {(doctor.city || doctor.state) ? `${doctor.city || ''}${doctor.city && doctor.state ? '/' : ''}${doctor.state || ''}` : "N/A"}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                      
+                      <div className="flex justify-end space-x-1">
+                         
+                          <Button variant="outline" size="icon" onClick={() => openDetailsDialog(doctor)} title="Visualizar Detalhes">
+                              <Eye className="h-4 w-4" />
+                          </Button>
+                         
+                          <Button variant="outline" size="icon" onClick={() => handleEdit(doctor.id)} title="Editar">
+                              <Edit className="h-4 w-4 text-blue-600" />
+                          </Button>
+                         
+                          <Button variant="outline" size="icon" onClick={() => openDeleteDialog(doctor.id)} title="Excluir">
+                              <Trash2 className="h-4 w-4 text-red-600" />
+                          </Button>
+                          
+                          
+                          <DropdownMenu>
+                              <DropdownMenuTrigger asChild>
+                                  <Button variant="ghost" className="h-8 w-8 p-0" title="Mais Ações">
+                                      <span className="sr-only">Mais Ações</span>
+                                      <MoreVertical className="h-4 w-4" />
+                                  </Button>
+                              </DropdownMenuTrigger>
+                              <DropdownMenuContent align="end">
+                                  <DropdownMenuItem>
+                                      <Calendar className="mr-2 h-4 w-4" />
+                                      Agendar Consulta
+                                  </DropdownMenuItem>
+                              </DropdownMenuContent>
+                          </DropdownMenu>
                       </div>
                     </td>
-                    <td className="p-4 text-gray-600">{doctor.crm}</td>
-                    <td className="p-4 text-gray-600">{doctor.telefone}</td>
-                    <td className="p-4 text-gray-600">{doctor.cidade}</td>
-                    <td className="p-4 text-gray-600">{doctor.estado}</td>
-                    <td className="p-4 text-gray-600">{doctor.ultimoAtendimento}</td>
-                    <td className="p-4 text-gray-600">{doctor.proximoAtendimento}</td>
-                    <td className="p-4">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <div className="text-blue-600 cursor-pointer">
-                            Ações
-                          </div>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => openDetailsDialog(String(doctor.id))}>
-                            <Eye className="w-4 h-4 mr-2" />
-                            Ver detalhes
-                          </DropdownMenuItem>
-                          <DropdownMenuItem asChild>
-                            <Link href={`/manager/home/${doctor.id}/editar`}>
-                              <Edit className="w-4 h-4 mr-2" />
-                              Editar
-                            </Link>
-                          </DropdownMenuItem>
-                          <DropdownMenuItem>
-                            <Calendar className="w-4 h-4 mr-2" />
-                            Ver agenda
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="text-red-600" onClick={() => openDeleteDialog(String(doctor.id))}>
-                            <Trash2 className="w-4 h-4 mr-2" />
-                            Excluir
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </td>
                   </tr>
-                ))
-              )}
-            </tbody>
-          </table>
-          <div ref={observerRef} style={{ height: 1 }} />
-          {isFetching && (
-            <div className="p-4 text-center text-gray-500">Carregando mais médicos...</div>
-          )}
-        </div>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
+      
+      
       <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Confirmar exclusão</AlertDialogTitle>
+            <AlertDialogTitle>Confirma a exclusão?</AlertDialogTitle>
             <AlertDialogDescription>
-              Tem certeza que deseja excluir este médico? Esta ação não pode ser desfeita.
+              Esta ação é irreversível e excluirá permanentemente o registro deste médico.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancelar</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => doctorToDelete && handleDeleteDoctor(doctorToDelete)}
-              className="bg-red-600 hover:bg-red-700"
-            >
-              Excluir
+            <AlertDialogCancel disabled={loading}>Cancelar</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDelete} className="bg-red-600 hover:bg-red-700" disabled={loading}>
+                {loading ? (
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : null}
+                Excluir
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-      {/* Modal de detalhes do médico */}
+
+      
       <AlertDialog open={detailsDialogOpen} onOpenChange={setDetailsDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Detalhes do Médico</AlertDialogTitle>
-            <AlertDialogDescription>
-              {doctorDetails === null ? (
-                <div className="text-gray-500">Carregando...</div>
-              ) : doctorDetails?.error ? (
-                <div className="text-red-600">{doctorDetails.error}</div>
-              ) : (
-                <div className="space-y-2 text-left">
-                  <div><strong>Nome:</strong> {doctorDetails.nome}</div>
-                  <div><strong>Telefone:</strong> {doctorDetails?.contato?.celular ?? doctorDetails?.contato?.telefone1 ?? doctorDetails?.telefone ?? ""}</div>
-                  <div><strong>Cidade:</strong> {doctorDetails?.endereco?.cidade ?? doctorDetails?.cidade ?? ""}</div>
-                  <div><strong>Estado:</strong> {doctorDetails?.endereco?.estado ?? doctorDetails?.estado ?? ""}</div>
-                  <div><strong>Convênio:</strong> {doctorDetails.convenio ?? ""}</div>
-                  <div><strong>VIP:</strong> {doctorDetails.vip ? "Sim" : "Não"}</div>
-                  <div><strong>Status:</strong> {doctorDetails.status ?? ""}</div>
-                  <div><strong>Último atendimento:</strong> {doctorDetails.ultimo_atendimento ?? doctorDetails.ultimoAtendimento ?? ""}</div>
-                  <div><strong>Próximo atendimento:</strong> {doctorDetails.proximo_atendimento ?? doctorDetails.proximoAtendimento ?? ""}</div>
+            <AlertDialogTitle className="text-2xl">{doctorDetails?.nome}</AlertDialogTitle>
+            <AlertDialogDescription className="text-left text-gray-700">
+              {doctorDetails && (
+                <div className="space-y-3 text-left">
+                  <h3 className="font-semibold mt-2">Informações Principais</h3>
+                  <div className="grid grid-cols-2 gap-y-1 gap-x-4 text-sm">
+                      <div><strong>CRM:</strong> {doctorDetails.crm}</div>
+                      <div><strong>Especialidade:</strong> {doctorDetails.especialidade}</div>
+                      <div><strong>Celular:</strong> {doctorDetails.contato.celular || 'N/A'}</div>
+                      <div><strong>Localização:</strong> {`${doctorDetails.endereco.cidade || 'N/A'}/${doctorDetails.endereco.estado || 'N/A'}`}</div>
+                  </div>
+                  
+                  <h3 className="font-semibold mt-4">Atendimento e Convênio</h3>
+                  <div className="grid grid-cols-2 gap-y-1 gap-x-4 text-sm">
+                      <div><strong>Convênio:</strong> {doctorDetails.convenio || 'N/A'}</div>
+                      <div><strong>VIP:</strong> {doctorDetails.vip ? "Sim" : "Não"}</div>
+                      <div><strong>Status:</strong> {doctorDetails.status || 'N/A'}</div>
+                      <div><strong>Último atendimento:</strong> {doctorDetails.ultimo_atendimento || 'N/A'}</div>
+                      <div><strong>Próximo atendimento:</strong> {doctorDetails.proximo_atendimento || 'N/A'}</div>
+                  </div>
                 </div>
+              )}
+              {doctorDetails === null && !loading && (
+                <div className="text-red-600">Detalhes não disponíveis.</div>
               )}
             </AlertDialogDescription>
           </AlertDialogHeader>
