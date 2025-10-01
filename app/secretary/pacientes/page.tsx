@@ -8,6 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Plus, Edit, Trash2, Eye, Calendar, Filter } from "lucide-react";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import SecretaryLayout from "@/components/secretary-layout";
+import { patientsService } from "@/services/patientsApi.mjs"
 
 export default function PacientesPage() {
     const [searchTerm, setSearchTerm] = useState("");
@@ -28,40 +29,41 @@ export default function PacientesPage() {
         setDetailsDialogOpen(true);
         setPatientDetails(null);
         try {
-            const res = await fetch(`https://mock.apidog.com/m1/1053378-0-default/pacientes/${patientId}`);
-            if (!res.ok) throw new Error(`HTTP ${res.status}`);
-            const json = await res.json();
-            setPatientDetails(json?.data ?? null);
+            const res = await patientsService.getById(patientId);
+        setPatientDetails(res[0]);
         } catch (e: any) {
             setPatientDetails({ error: e?.message || "Erro ao buscar detalhes" });
         }
     };
-
+    
     const fetchPacientes = useCallback(
         async (pageToFetch: number) => {
             if (isFetching || !hasNext) return;
             setIsFetching(true);
             setError(null);
             try {
-                const res = await fetch(`https://mock.apidog.com/m1/1053378-0-default/pacientes?page=${pageToFetch}&limit=20`);
-                if (!res.ok) throw new Error(`HTTP ${res.status}`);
-                const json = await res.json();
-                const items = Array.isArray(json?.data) ? json.data : [];
-                const mapped = items.map((p: any) => ({
-                    id: String(p.id ?? ""),
-                    nome: p.nome ?? "",
-                    telefone: p?.contato?.celular ?? p?.contato?.telefone1 ?? p?.telefone ?? "",
-                    cidade: p?.endereco?.cidade ?? p?.cidade ?? "",
-                    estado: p?.endereco?.estado ?? p?.estado ?? "",
-                    ultimoAtendimento: p.ultimo_atendimento ?? p.ultimoAtendimento ?? undefined,
-                    proximoAtendimento: p.proximo_atendimento ?? p.proximoAtendimento ?? undefined,
-                    convenio: p.convenio ?? "",
-                    vip: Boolean(p.vip ?? false),
-                    status: p.status ?? undefined,
-                }));
-                setPatients((prev) => [...prev, ...mapped]);
-                setHasNext(Boolean(json?.pagination?.has_next));
-                setPage(pageToFetch + 1);
+                const res = await patientsService.list();
+                const mapped = res.map((p: any) => ({
+                id: String(p.id ?? ""),
+                nome: p.full_name ?? "",
+                telefone: p.phone_mobile ?? p.phone1 ?? "",
+                cidade: p.city ?? "",
+                estado: p.state ?? "",
+                ultimoAtendimento: p.last_visit_at ?? "",
+                proximoAtendimento: p.next_appointment_at ?? "",
+                vip: Boolean(p.vip ?? false),
+                convenio: p.convenio ?? "", // se não existir, fica vazio
+                status: p.status ?? undefined,
+            }));
+
+                setPatients((prev) => {
+                    const all = [...prev, ...mapped];
+                    const unique = Array.from(new Map(all.map(p => [p.id, p])).values());
+                    return unique;
+                });
+
+                if (mapped.length === 0) setHasNext(false); // parar carregamento
+                else setPage(prev => prev + 1);
             } catch (e: any) {
                 setError(e?.message || "Erro ao buscar pacientes");
             } finally {
@@ -89,9 +91,21 @@ export default function PacientesPage() {
         };
     }, [fetchPacientes, page, hasNext, isFetching]);
 
-    const handleDeletePatient = (patientId: string) => {
+    const handleDeletePatient = async (patientId: string) => {
         // Remove from current list (client-side deletion)
-        setPatients((prev) => prev.filter((p) => String(p.id) !== String(patientId)));
+        try{
+            const res = await patientsService.delete(patientId);
+            
+            if(res){
+                alert(`${res.error} ${res.message}`)
+            }
+            
+            setPatients((prev) => prev.filter((p) => String(p.id) !== String(patientId)));
+            
+
+        } catch (e: any) {
+            setError(e?.message || "Erro ao deletar paciente");
+        }
         setDeleteDialogOpen(false);
         setPatientToDelete(null);
     };
@@ -311,33 +325,24 @@ export default function PacientesPage() {
                                     <div className="text-red-600">{patientDetails.error}</div>
                                 ) : (
                                     <div className="space-y-2 text-left">
-                                        <div>
-                                            <strong>Nome:</strong> {patientDetails.nome}
-                                        </div>
-                                        <div>
-                                            <strong>Telefone:</strong> {patientDetails?.contato?.celular ?? patientDetails?.contato?.telefone1 ?? patientDetails?.telefone ?? ""}
-                                        </div>
-                                        <div>
-                                            <strong>Cidade:</strong> {patientDetails?.endereco?.cidade ?? patientDetails?.cidade ?? ""}
-                                        </div>
-                                        <div>
-                                            <strong>Estado:</strong> {patientDetails?.endereco?.estado ?? patientDetails?.estado ?? ""}
-                                        </div>
-                                        <div>
-                                            <strong>Convênio:</strong> {patientDetails.convenio ?? ""}
-                                        </div>
-                                        <div>
-                                            <strong>VIP:</strong> {patientDetails.vip ? "Sim" : "Não"}
-                                        </div>
-                                        <div>
-                                            <strong>Status:</strong> {patientDetails.status ?? ""}
-                                        </div>
-                                        <div>
-                                            <strong>Último atendimento:</strong> {patientDetails.ultimo_atendimento ?? patientDetails.ultimoAtendimento ?? ""}
-                                        </div>
-                                        <div>
-                                            <strong>Próximo atendimento:</strong> {patientDetails.proximo_atendimento ?? patientDetails.proximoAtendimento ?? ""}
-                                        </div>
+                                        <p><strong>Nome:</strong> {patientDetails.full_name}</p>
+                                        <p><strong>CPF:</strong> {patientDetails.cpf}</p>
+                                        <p><strong>Email:</strong> {patientDetails.email}</p>
+                                        <p><strong>Telefone:</strong> {patientDetails.phone_mobile ?? patientDetails.phone1 ?? patientDetails.phone2 ?? "-"}</p>
+                                        <p><strong>Nome social:</strong> {patientDetails.social_name ?? "-"}</p>
+                                        <p><strong>Sexo:</strong> {patientDetails.sex ?? "-"}</p>
+                                        <p><strong>Tipo sanguíneo:</strong> {patientDetails.blood_type ?? "-"}</p>
+                                        <p><strong>Peso:</strong> {patientDetails.weight_kg ?? "-"}{patientDetails.weight_kg ? "kg": ""}</p>
+                                        <p><strong>Altura:</strong> {patientDetails.height_m ?? "-"}{patientDetails.height_m ? "m": ""}</p>
+                                        <p><strong>IMC:</strong> {patientDetails.bmi ?? "-"}</p>
+                                        <p><strong>Endereço:</strong> {patientDetails.street ?? "-"}</p>
+                                        <p><strong>Bairro:</strong> {patientDetails.neighborhood ?? "-"}</p>
+                                        <p><strong>Cidade:</strong> {patientDetails.city ?? "-"}</p>
+                                        <p><strong>Estado:</strong> {patientDetails.state ?? "-"}</p>
+                                        <p><strong>CEP:</strong> {patientDetails.cep ?? "-"}</p>
+                                        <p><strong>Criado em:</strong> {patientDetails.created_at ?? "-"}</p>
+                                        <p><strong>Atualizado em:</strong> {patientDetails.updated_at ?? "-"}</p>
+                                        <p><strong>Id:</strong> {patientDetails.id ?? "-"}</p>
                                     </div>
                                 )}
                             </AlertDialogDescription>
