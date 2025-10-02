@@ -10,12 +10,12 @@ export default function InicialPage() {
       {}
       <div className="bg-black text-white text-sm py-2 px-6 flex justify-between">
         <span> Horário: 08h00 - 21h00</span>
-        <span> Email: contato@midconnecta.com</span>
+        <span> Email: contato@medconnect.com</span>
       </div>
 
       {}
       <header className="bg-white shadow-md py-4 px-6 flex justify-between items-center">
-        <h1 className="text-2xl font-bold text-blue-700">MidConnecta</h1>
+        <h1 className="text-2xl font-bold text-blue-700">MedConnect</h1>
         <nav className="flex space-x-6 text-gray-700 font-medium">
           <a href="#home" className="hover:text-blue-600">Home</a>
           <a href="#about" className="hover:text-blue-600">Sobre</a>
@@ -106,7 +106,7 @@ export default function InicialPage() {
 
       {}
       <footer className="bg-black text-white py-6 text-center">
-        <p>© 2025 MidConnecta</p>
+        <p>© 2025 MedConnect</p>
       </footer>
     </div>
   );
