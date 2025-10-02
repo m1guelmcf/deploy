@@ -1,4 +1,3 @@
-
 "use client";
 
 import Link from "next/link"
@@ -46,7 +45,7 @@ export default function InicialPage() {
             Soluções Médicas <br /> & Cuidados com a Saúde
           </h1>
           <p className="text-gray-600 mt-4">
-            São mais de 25 anos de experiência em serviços médicos com qualidade e confiança.
+            Excelência em saúde há mais de 25 anos. Atendimento médicio com qualidade,segurança e carinho.
           </p>
           <div className="mt-6 flex space-x-4">
             <Button className="rounded-full px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white shadow-lg transition">
@@ -62,7 +61,7 @@ export default function InicialPage() {
         </div>
         <div className="mt-10 md:mt-0">
           <img
-            src="https://cdn-icons-png.flaticon.com/512/387/387561.png"
+            src="https://t4.ftcdn.net/jpg/03/20/52/31/360_F_320523164_tx7Rdd7I2XDTvvKfz2oRuRpKOPE5z0ni.jpg"
             alt="Médico"
             className="w-80"
           />
@@ -71,14 +70,14 @@ export default function InicialPage() {
 
       {}
       <section className="py-16 px-10 md:px-20 bg-white">
-        <h2 className="text-center text-3xl font-bold text-black">Nossos Serviços</h2>
+        <h2 className="text-center text-3xl font-bold text-black">Cuidados completos para a sua saúde</h2>
         <p className="text-center text-gray-600 mt-2">Serviços médicos que oferecemos</p>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mt-10">
           <div className="p-6 bg-gray-100 rounded-xl shadow hover:shadow-lg transition">
             <h3 className="text-xl font-semibold text-blue-600">Clínica Geral</h3>
             <p className="text-gray-600 mt-2">
-              Atendimento médico geral com foco na prevenção e diagnóstico.
+              Seu primeiro passo para o cuidado. Atendimento focado na prevenção e no diagnóstico inicial.
             </p>
             <Button className="mt-4 rounded-full bg-blue-600 hover:bg-blue-700 text-white px-5 py-2">
               Agendar
@@ -87,7 +86,7 @@ export default function InicialPage() {
           <div className="p-6 bg-gray-100 rounded-xl shadow hover:shadow-lg transition">
             <h3 className="text-xl font-semibold text-blue-600">Pediatria</h3>
             <p className="text-gray-600 mt-2">
-              Cuidado especializado para crianças e adolescentes.
+              Cuidado gentil e especializado para garantir a saúde e o desenvolvimeto de crianças e adolescentes.
             </p>
             <Button className="mt-4 rounded-full bg-blue-600 hover:bg-blue-700 text-white px-5 py-2">
               Agendar
@@ -96,7 +95,7 @@ export default function InicialPage() {
           <div className="p-6 bg-gray-100 rounded-xl shadow hover:shadow-lg transition">
             <h3 className="text-xl font-semibold text-blue-600">Exames</h3>
             <p className="text-gray-600 mt-2">
-              Exames laboratoriais e de imagem com precisão e agilidade.
+              Resultados rápidos e precisos em exames laboratoriais e de imagem essenciais para seu diagnóstico.
             </p>
             <Button className="mt-4 rounded-full bg-blue-600 hover:bg-blue-700 text-white px-5 py-2">
               Agendar
@@ -112,4 +111,3 @@ export default function InicialPage() {
     </div>
   );
 }
-

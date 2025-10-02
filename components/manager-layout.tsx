@@ -110,7 +110,7 @@ export default function ManagerLayout({ children }: PatientLayoutProps) {
                 <div className="w-4 h-4 bg-white rounded-sm"></div>
               </div>
               <span className="font-semibold text-gray-900">
-                Hospital System
+                MidConnecta
               </span>
             </div>
           )}
