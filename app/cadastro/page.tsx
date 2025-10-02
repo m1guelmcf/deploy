@@ -5,14 +5,10 @@ import { Calendar, Clock, User, Shield, Stethoscope, Receipt, IdCard  } from "lu
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-[#F2F2F2]">
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="container mx-auto px-4 py-16">
         <div className="text-center mb-12">
-          <h1 className="text-4xl font-bold text-gray-900 mb-4">Central de Operações <br>
-          </br>
-          MidConnecta
-
-          </h1>
+          <h1 className="text-4xl font-bold text-gray-900 mb-4">Sistema de Consultas Médicas</h1>
           <p className="text-xl text-gray-600 max-w-2xl mx-auto">
             Gerencie suas consultas médicas de forma simples e eficiente
           </p>
@@ -23,7 +19,7 @@ export default function HomePage() {
             <CardHeader className="text-center flex-shrink-0">
               <User className="w-12 h-12 text-black-600 mx-auto mb-4" />
               <CardTitle>Área do Paciente</CardTitle>
-              <CardDescription>Tenha o controle total da sua saúde: agende, consulte o histórico e informações pessoais</CardDescription>
+              <CardDescription>Acesse sua área pessoal para agendar consultas e gerenciar seus dados</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 flex-grow flex flex-col">
               <div className="space-y-3 flex-grow">
@@ -50,7 +46,7 @@ export default function HomePage() {
             <CardHeader className="text-center flex-shrink-0">
               <Shield className="w-12 h-12 text-purple-600 mx-auto mb-4" />
               <CardTitle>Área da Secretária</CardTitle>
-              <CardDescription>Otimize o fluxo de trabalho e mantenha a agenda sempre organizada</CardDescription>
+              <CardDescription>Gerencie consultas, pacientes e agenda médica</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 flex-grow flex flex-col">
               <div className="space-y-3 flex-grow">
@@ -77,7 +73,7 @@ export default function HomePage() {
             <CardHeader className="text-center flex-shrink-0">
               <Stethoscope className="w-12 h-12 text-green-600 mx-auto mb-4" />
               <CardTitle>Área Médica</CardTitle>
-              <CardDescription>Visualize sua agenda, laudos de pacientes e histórico para um diagnóstico preciso</CardDescription>
+              <CardDescription>Acesso restrito para profissionais de saúde</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 flex-grow flex flex-col">
               <div className="space-y-3 flex-grow">
@@ -87,7 +83,7 @@ export default function HomePage() {
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                   <User className="w-4 h-4" />
-                  <span>Ver pacientes e laudos</span>
+                  <span>Ver pacientes</span>
                 </div>
                 <div className="flex items-center gap-2 text-sm text-gray-600">
                   <Clock className="w-4 h-4" />
@@ -104,7 +100,7 @@ export default function HomePage() {
             <CardHeader className="text-center flex-shrink-0">
               <IdCard  className="w-12 h-12 text-blue-600 mx-auto mb-4" />
               <CardTitle>Área do Gestor</CardTitle>
-              <CardDescription>Configure o sistema, gerencie usuários e contre a operação da clínica</CardDescription>
+              <CardDescription>Acesso restrito para gestores e coordenadores</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 flex-grow flex flex-col">
               <div className="space-y-3 flex-grow">
@@ -131,7 +127,7 @@ export default function HomePage() {
             <CardHeader className="text-center flex-shrink-0">
               <Receipt className="w-12 h-12 text-orange-600 mx-auto mb-4" />
               <CardTitle>Área de Finanças</CardTitle>
-              <CardDescription>Controle o faturamento, pagamentos e a saúde financeira da clínica</CardDescription>
+              <CardDescription>Acesso restrito para profissionais do setor financeiro</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 flex-grow flex flex-col">
               <div className="space-y-3 flex-grow">
