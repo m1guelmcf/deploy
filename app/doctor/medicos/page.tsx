@@ -9,7 +9,9 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Eye, Edit, Calendar } from "lucide-react";
+import { Eye, Edit, Calendar, Trash2 } from "lucide-react";
+import { api } from "@/services/api.mjs";
+import { PatientDetailsModal } from "@/components/ui/patient-details-modal";
 
 interface Paciente {
   id: string;
@@ -19,32 +21,78 @@ interface Paciente {
   estado: string;
   ultimoAtendimento?: string;
   proximoAtendimento?: string;
+  email?: string;
+  birth_date?: string;
+  cpf?: string;
+  blood_type?: string;
+  weight_kg?: number;
+  height_m?: number;
+  street?: string;
+  number?: string;
+  complement?: string;
+  neighborhood?: string;
+  cep?: string;
 }
 
 export default function PacientesPage() {
   const [pacientes, setPacientes] = useState<Paciente[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedPatient, setSelectedPatient] = useState<Paciente | null>(null);
+  const [isModalOpen, setIsModalOpen] = useState(false);
+
+  const handleOpenModal = (patient: Paciente) => {
+    setSelectedPatient(patient);
+    setIsModalOpen(true);
+  };
+
+  const handleCloseModal = () => {
+    setSelectedPatient(null);
+    setIsModalOpen(false);
+  };
+
+  const formatDate = (dateString: string) => {
+    if (!dateString) return "";
+    const date = new Date(dateString);
+    return new Intl.DateTimeFormat('pt-BR').format(date);
+  };
+
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage, setItemsPerPage] = useState(5);
+
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentItems = pacientes.slice(indexOfFirstItem, indexOfLastItem);
+
+  const paginate = (pageNumber: number) => setCurrentPage(pageNumber);
 
   useEffect(() => {
     async function fetchPacientes() {
       try {
         setLoading(true);
         setError(null);
-        const res = await fetch("https://mock.apidog.com/m1/1053378-0-default/rest/v1/patients");
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        const json = await res.json();
-        // A API pode retornar o array diretamente ou dentro de uma propriedade 'data'
+        const json = await api.get("/rest/v1/patients");
         const items = Array.isArray(json) ? json : (Array.isArray(json?.data) ? json.data : []);
 
         const mapped = items.map((p: any) => ({
           id: String(p.id ?? ""),
-          nome: p.nome ?? "",
-          telefone: p?.contato?.celular ?? p?.contato?.telefone1 ?? p?.telefone ?? "",
-          cidade: p?.endereco?.cidade ?? p?.cidade ?? "",
-          estado: p?.endereco?.estado ?? p?.estado ?? "",
-          ultimoAtendimento: p.ultimo_atendimento ?? p.ultimoAtendimento ?? "",
-          proximoAtendimento: p.proximo_atendimento ?? p.proximoAtendimento ?? "",
+          nome: p.full_name ?? "",
+          telefone: p.phone_mobile ?? "",
+          cidade: p.city ?? "",
+          estado: p.state ?? "",
+          ultimoAtendimento: formatDate(p.created_at) ?? "",
+          proximoAtendimento: "",
+          email: p.email ?? "",
+          birth_date: p.birth_date ?? "",
+          cpf: p.cpf ?? "",
+          blood_type: p.blood_type ?? "",
+          weight_kg: p.weight_kg ?? 0,
+          height_m: p.height_m ?? 0,
+          street: p.street ?? "",
+          number: p.number ?? "",
+          complement: p.complement ?? "",
+          neighborhood: p.neighborhood ?? "",
+          cep: p.cep ?? "",
         }));
 
         setPacientes(mapped);
@@ -83,7 +131,7 @@ export default function PacientesPage() {
                 {loading ? (
                   <tr>
                     <td colSpan={7} className="p-6 text-gray-600">
-                     Carregando pacientes...
+                      Carregando pacientes...
                     </td>
                   </tr>
                 ) : error ? (
@@ -97,7 +145,7 @@ export default function PacientesPage() {
                     </td>
                   </tr>
                 ) : (
-                  pacientes.map((p) => (
+                  currentItems.map((p) => (
                     <tr key={p.id} className="border-b border-gray-100 hover:bg-gray-50">
                       <td className="p-4">{p.nome}</td>
                       <td className="p-4 text-gray-600">{p.telefone}</td>
@@ -111,7 +159,7 @@ export default function PacientesPage() {
                             <button className="text-blue-600 hover:underline">Ações</button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => alert(`Detalhes para paciente ID: ${p.id}`)}>
+                            <DropdownMenuItem onClick={() => handleOpenModal(p)}>
                               <Eye className="w-4 h-4 mr-2" />
                               Ver detalhes
                             </DropdownMenuItem>
@@ -125,6 +173,16 @@ export default function PacientesPage() {
                               <Calendar className="w-4 h-4 mr-2" />
                               Ver agenda
                             </DropdownMenuItem>
+                            <DropdownMenuItem
+                              onClick={() => {
+                                const newPacientes = pacientes.filter((pac) => pac.id !== p.id)
+                                setPacientes(newPacientes)
+                                alert(`Paciente ID: ${p.id} excluído`)
+                              }}
+                              className="text-red-600">
+                              <Trash2 className="w-4 h-4 mr-2" />
+                              Excluir
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </td>
@@ -134,8 +192,24 @@ export default function PacientesPage() {
               </tbody>
             </table>
           </div>
+          <div className="flex justify-center space-x-2 mt-4">
+            {Array.from({ length: Math.ceil(pacientes.length / itemsPerPage) }, (_, i) => (
+              <button
+                key={i}
+                onClick={() => paginate(i + 1)}
+                className={`px-4 py-2 rounded-md ${currentPage === i + 1 ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+              >
+                {i + 1}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
+      <PatientDetailsModal
+        patient={selectedPatient}
+        isOpen={isModalOpen}
+        onClose={handleCloseModal}
+      />
     </DoctorLayout>
   );
 }
