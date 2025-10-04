@@ -1,7 +1,7 @@
 "use client";
 
 import type React from "react";
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useRouter } from "next/navigation";
 import { toast } from "sonner";
 
@@ -17,13 +17,22 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import { Calendar, Clock, User } from "lucide-react";
+import { doctorsService } from "services/doctorsApi.mjs";
 
 // Interface para o estado local do formulário (sem alterações)
 interface AppointmentFormState {
-  doctorId: string;
+  id: string;
   date: string;
   time: string;
   observations: string;
+}
+
+interface Doctor {
+    id: string;
+    full_name: string;
+    specialty: string;
+    phone_mobile: string;
+    
 }
 
 // --- DADOS MOCKADOS (ALTERAÇÃO 1: Adicionando location e phone) ---
@@ -37,15 +46,39 @@ const availableTimes = ["09:00", "09:30", "10:00", "10:30", "14:00", "14:30", "1
 
 export default function ScheduleAppointmentPage() {
   const router = useRouter();
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
   // [SINCRONIZAÇÃO 1 - continuação] - Obtendo a lista de agendamentos existentes
   const { addAppointment, appointments } = useAppointments();
 
   const [formData, setFormData] = useState<AppointmentFormState>({
-    doctorId: "",
+    id: "",
     date: "",
     time: "",
     observations: "",
   });
+
+  const fetchDoctors = useCallback(async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        
+        const data: Doctor[] = await doctorsService.list();
+        setDoctors(data || []); 
+      } catch (e: any) {
+        console.error("Erro ao carregar lista de médicos:", e);
+        setError("Não foi possível carregar a lista de médicos. Verifique a conexão com a API.");
+        setDoctors([]);
+      } finally {
+        setLoading(false);
+      }
+    }, []);
+
+  useEffect(() => {
+      fetchDoctors();
+  }, [fetchDoctors]);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
@@ -58,18 +91,18 @@ export default function ScheduleAppointmentPage() {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.doctorId || !formData.date || !formData.time) {
+    if (!formData.id || !formData.date || !formData.time) {
         toast.error("Por favor, preencha os campos de médico, data e horário.");
         return;
     }
 
-    const selectedDoctor = doctors.find(doc => doc.id === formData.doctorId);
+    const selectedDoctor = doctors.find(doc => doc.id === formData.id);
     if (!selectedDoctor) return;
 
     // Validação de conflito (sem alterações, já estava correta)
     const isConflict = appointments.some(
       (apt) =>
-        apt.doctorName === selectedDoctor.name &&
+        apt.doctorName === selectedDoctor.full_name &&
         apt.date === formData.date &&
         apt.time === formData.time
     );
@@ -82,13 +115,13 @@ export default function ScheduleAppointmentPage() {
     // [ALTERAÇÃO 2] - Utilizando os dados do médico selecionado para location e phone
     // e removendo os placeholders.
     addAppointment({
-      doctorName: selectedDoctor.name,
+      doctorName: selectedDoctor.full_name,
       specialty: selectedDoctor.specialty,
       date: formData.date,
       time: formData.time,
       observations: formData.observations,
-      location: selectedDoctor.location, // Usando a localização do médico
-      phone: selectedDoctor.phone,       // Usando o telefone do médico
+      phone: selectedDoctor.phone_mobile,
+      location: ""
     });
 
     toast.success("Consulta agendada com sucesso!");
@@ -118,8 +151,8 @@ export default function ScheduleAppointmentPage() {
                   <div className="space-y-2">
                     <Label htmlFor="doctor">Médico</Label>
                     <Select
-                      value={formData.doctorId}
-                      onValueChange={(value) => handleSelectChange('doctorId', value)}
+                      value={formData.id}
+                      onValueChange={(value) => handleSelectChange('id', value)}
                     >
                       <SelectTrigger>
                         <SelectValue placeholder="Seleione um médico" />
@@ -127,7 +160,7 @@ export default function ScheduleAppointmentPage() {
                       <SelectContent>
                         {doctors.map((doctor) => (
                           <SelectItem key={doctor.id} value={doctor.id}>
-                            {doctor.name} - {doctor.specialty}
+                            {doctor.full_name} - {doctor.specialty}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -195,10 +228,10 @@ export default function ScheduleAppointmentPage() {
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-3 text-sm">
-                {formData.doctorId ? (
+                {formData.id ? (
                   <div className="flex items-center">
                     <User className="mr-2 h-4 w-4 text-gray-500" />
-                    <span>{doctors.find((d) => d.id === formData.doctorId)?.name}</span>
+                    <span>{doctors.find((d) => d.id === formData.id)?.full_name}</span>
                   </div>
                 ) : <p className="text-gray-500">Preencha o formulário...</p>}
                 
