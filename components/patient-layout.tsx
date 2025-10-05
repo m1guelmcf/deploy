@@ -97,22 +97,22 @@ export default function HospitalLayout({ children }: HospitalLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex">
+    <div className="min-h-screen bg-background flex">
       {/* Sidebar */}
       <div
-        className={`bg-white border-r border-gray-200 transition-all duration-300 ${
+        className={`bg-card border-r border-border transition-all duration-300 ${
           sidebarCollapsed ? "w-16" : "w-64"
         } fixed left-0 top-0 h-screen flex flex-col z-10`}
       >
         {/* Header da Sidebar */}
-        <div className="p-4 border-b border-gray-200">
+        <div className="p-4 border-b border-border">
           <div className="flex items-center justify-between">
             {!sidebarCollapsed && (
               <div className="flex items-center gap-2">
-                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                  <div className="w-4 h-4 bg-white rounded-sm"></div>
+                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                  <div className="w-4 h-4 bg-primary-foreground rounded-sm"></div>
                 </div>
-                <span className="font-semibold text-gray-900">MedConnect</span>
+                <span className="font-semibold text-foreground">MedConnect</span>
               </div>
             )}
             <Button
@@ -143,8 +143,8 @@ export default function HospitalLayout({ children }: HospitalLayoutProps) {
                 <div
                   className={`flex items-center gap-3 px-3 py-2 rounded-lg mb-1 transition-colors ${
                     isActive
-                      ? "bg-blue-50 text-blue-600 border-r-2 border-blue-600"
-                      : "text-gray-600 hover:bg-gray-50"
+                      ? "bg-accent text-accent-foreground"
+                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
                   }`}
                 >
                   <Icon className="w-5 h-5 flex-shrink-0" />
@@ -171,10 +171,10 @@ export default function HospitalLayout({ children }: HospitalLayoutProps) {
             </Avatar>
             {!sidebarCollapsed && (
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-gray-900 truncate">
+                <p className="text-sm font-medium text-foreground truncate">
                   {patientData.name}
                 </p>
-                <p className="text-xs text-gray-500 truncate">
+                <p className="text-xs text-muted-foreground truncate">
                   {patientData.email}
                 </p>
               </div>
@@ -208,14 +208,14 @@ export default function HospitalLayout({ children }: HospitalLayoutProps) {
         }`}
       >
         {/* Header */}
-        <header className="bg-white border-b border-gray-200 px-6 py-4">
+        <header className="bg-card border-b border-border px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4 flex-1 max-w-md">
               <div className="relative flex-1">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                 <Input
                   placeholder="Buscar paciente"
-                  className="pl-10 bg-gray-50 border-gray-200"
+                  className="pl-10 bg-background border-border"
                 />
               </div>
             </div>
@@ -223,7 +223,7 @@ export default function HospitalLayout({ children }: HospitalLayoutProps) {
             <div className="flex items-center gap-4">
               <Button variant="ghost" size="sm" className="relative">
                 <Bell className="w-5 h-5" />
-                <Badge className="absolute -top-1 -right-1 w-5 h-5 p-0 flex items-center justify-center bg-red-500 text-white text-xs">
+                <Badge className="absolute -top-1 -right-1 w-5 h-5 p-0 flex items-center justify-center bg-destructive text-destructive-foreground text-xs">
                   1
                 </Badge>
               </Button>

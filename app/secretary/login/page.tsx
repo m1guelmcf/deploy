@@ -65,57 +65,57 @@ export default function SecretaryLogin() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-blue-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md shadow-xl border-0 bg-white/80 backdrop-blur-sm">
+    <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <Card className="w-full max-w-md shadow-xl border-0 bg-card/80 backdrop-blur-sm">
         <CardHeader className="text-center space-y-4 pb-8">
-          <div className="mx-auto w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center">
-            <UserCheck className="w-8 h-8 text-blue-600" />
+          <div className="mx-auto w-16 h-16 bg-purple-100 dark:bg-purple-900/30 rounded-full flex items-center justify-center">
+            <UserCheck className="w-8 h-8 text-purple-600 dark:text-purple-400" />
           </div>
           <div>
-            <CardTitle className="text-2xl font-bold text-gray-900">Área da Secretária</CardTitle>
-            <CardDescription className="text-gray-600 mt-2">Acesse o sistema de gerenciamento</CardDescription>
+            <CardTitle className="text-2xl font-bold text-foreground">Área da Secretária</CardTitle>
+            <CardDescription className="text-muted-foreground mt-2">Acesse o sistema de gerenciamento</CardDescription>
           </div>
         </CardHeader>
 
         <CardContent className="space-y-6">
           <form onSubmit={handleSubmit} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="email" className="text-sm font-medium text-foreground">
                 E-mail
               </Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                 <Input
                   id="email"
                   type="email"
                   placeholder="seu.email@clinica.com"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
-                  className="pl-10 h-11 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                  className="pl-10 h-11 border-border focus:border-purple-500 focus:ring-purple-500"
                   required
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+              <Label htmlFor="password" className="text-sm font-medium text-foreground">
                 Senha
               </Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
                 <Input
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Digite sua senha"
                   value={form.password}
                   onChange={(e) => setForm({ ...form, password: e.target.value })}
-                  className="pl-10 pr-10 h-11 border-gray-200 focus:border-blue-500 focus:ring-blue-500"
+                  className="pl-10 pr-10 h-11 border-border focus:border-purple-500 focus:ring-purple-500"
                   required
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-400 hover:text-gray-600"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-muted-foreground hover:text-foreground"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -124,7 +124,7 @@ export default function SecretaryLogin() {
 
             <Button
               type="submit"
-              className="w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-medium"
+              className="w-full h-11 bg-purple-600 text-white hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600 dark:text-white"
               disabled={isLoading}
             >
               {isLoading ? (
@@ -140,13 +140,13 @@ export default function SecretaryLogin() {
 
           <div className="relative">
             <Separator className="my-6" />
-            <span className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-white px-3 text-sm text-gray-500">
+            <span className="absolute left-1/2 top-1/2 transform -translate-x-1/2 -translate-y-1/2 bg-card px-3 text-sm text-muted-foreground">
               ou
             </span>
           </div>
 
           <div className="text-center">
-            <Link href="/" className="text-sm text-blue-600 hover:text-blue-700 font-medium hover:underline">
+            <Link href="/" className="text-sm text-purple-600 hover:text-purple-700 dark:text-purple-400 dark:hover:text-purple-500 font-medium hover:underline">
               Voltar à página inicial
             </Link>
           </div>
