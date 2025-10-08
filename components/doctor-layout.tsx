@@ -88,7 +88,7 @@ useEffect(() => {
             // Botão para o dashboard do médico
         },
         {
-            href: "#",
+            href: "/doctor/medicos/consultas",
             icon: Calendar,
             label: "Consultas",
             // Botão para página de consultas marcadas do médico atual
