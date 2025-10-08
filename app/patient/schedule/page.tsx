@@ -1,135 +1,96 @@
-"use client";
+"use client"
 
-import type React from "react";
-import { useState, useEffect, useCallback } from "react";
-import { useRouter } from "next/navigation";
-import { toast } from "sonner";
+import type React from "react"
+import { useState } from "react"
+// Importações de componentes omitidas para brevidade, mas estão no código original
+import PatientLayout from "@/components/patient-layout"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Textarea } from "@/components/ui/textarea"
+import { Calendar, Clock, User } from "lucide-react"
 
-// [SINCRONIZAÇÃO 1] - Importando a lista de 'appointments' para a validação de conflito
-import { useAppointments } from "../../context/AppointmentsContext";
+// Chave do LocalStorage, a mesma usada em secretarypage.tsx
+const APPOINTMENTS_STORAGE_KEY = "clinic-appointments";
 
-// Componentes de UI e Layout
-import PatientLayout from "@/components/patient-layout";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
-import { Calendar, Clock, User } from "lucide-react";
-import { doctorsService } from "services/doctorsApi.mjs";
+export default function ScheduleAppointment() {
+  const [selectedDoctor, setSelectedDoctor] = useState("")
+  const [selectedDate, setSelectedDate] = useState("")
+  const [selectedTime, setSelectedTime] = useState("")
+  const [notes, setNotes] = useState("")
 
-// Interface para o estado local do formulário (sem alterações)
-interface AppointmentFormState {
-  id: string;
-  date: string;
-  time: string;
-  observations: string;
-}
+  const doctors = [
+    { id: "1", name: "Dr. João Silva", specialty: "Cardiologia" },
+    { id: "2", name: "Dra. Maria Santos", specialty: "Dermatologia" },
+    { id: "3", name: "Dr. Pedro Costa", specialty: "Ortopedia" },
+    { id: "4", name: "Dra. Ana Lima", specialty: "Ginecologia" },
+  ]
 
-interface Doctor {
-    id: string;
-    full_name: string;
-    specialty: string;
-    phone_mobile: string;
-    
-}
-
-// --- DADOS MOCKADOS (ALTERAÇÃO 1: Adicionando location e phone) ---
-const doctors = [
-    { id: "1", name: "Dr. João Silva", specialty: "Cardiologia", location: "Consultório A - 2º andar", phone: "(11) 3333-4444" },
-    { id: "2", name: "Dra. Maria Santos", specialty: "Dermatologia", location: "Consultório B - 1º andar", phone: "(11) 3333-5555" },
-    { id: "3", name: "Dr. Pedro Costa", specialty: "Ortopedia", location: "Consultório C - 3º andar", phone: "(11) 3333-6666" },
-];
-const availableTimes = ["09:00", "09:30", "10:00", "10:30", "14:00", "14:30", "15:00"];
-// -------------------------------------------------------------
-
-export default function ScheduleAppointmentPage() {
-  const router = useRouter();
-  const [doctors, setDoctors] = useState<Doctor[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-
-  // [SINCRONIZAÇÃO 1 - continuação] - Obtendo a lista de agendamentos existentes
-  const { addAppointment, appointments } = useAppointments();
-
-  const [formData, setFormData] = useState<AppointmentFormState>({
-    id: "",
-    date: "",
-    time: "",
-    observations: "",
-  });
-
-  const fetchDoctors = useCallback(async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        
-        const data: Doctor[] = await doctorsService.list();
-        setDoctors(data || []); 
-      } catch (e: any) {
-        console.error("Erro ao carregar lista de médicos:", e);
-        setError("Não foi possível carregar a lista de médicos. Verifique a conexão com a API.");
-        setDoctors([]);
-      } finally {
-        setLoading(false);
-      }
-    }, []);
-
-  useEffect(() => {
-      fetchDoctors();
-  }, [fetchDoctors]);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { name, value } = e.target;
-    setFormData(prevState => ({ ...prevState, [name]: value }));
-  };
-
-  const handleSelectChange = (name: keyof AppointmentFormState, value: string) => {
-    setFormData(prevState => ({ ...prevState, [name]: value }));
-  };
+  const availableTimes = [
+    "08:00",
+    "08:30",
+    "09:00",
+    "09:30",
+    "10:00",
+    "10:30",
+    "14:00",
+    "14:30",
+    "15:00",
+    "15:30",
+    "16:00",
+    "16:30",
+  ]
 
   const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!formData.id || !formData.date || !formData.time) {
-        toast.error("Por favor, preencha os campos de médico, data e horário.");
+    e.preventDefault()
+
+    const doctorDetails = doctors.find((d) => d.id === selectedDoctor)
+    
+    // --- SIMULAÇÃO DO PACIENTE LOGADO ---
+    // Você só tem um usuário para cada role. Vamos simular um paciente:
+    const patientDetails = { 
+        id: "P001", 
+        full_name: "Paciente Exemplo Único", // Este nome aparecerá na agenda do médico
+        location: "Clínica Geral",
+        phone: "(11) 98765-4321" 
+    }; 
+
+    if (!patientDetails || !doctorDetails) {
+        alert("Erro: Selecione o médico ou dados do paciente indisponíveis.");
         return;
     }
 
-    const selectedDoctor = doctors.find(doc => doc.id === formData.id);
-    if (!selectedDoctor) return;
+    const newAppointment = {
+        id: new Date().getTime(), // ID único simples
+        patientName: patientDetails.full_name,
+        doctor: doctorDetails.name, // Nome completo do médico (necessário para a listagem)
+        specialty: doctorDetails.specialty,
+        date: selectedDate,
+        time: selectedTime,
+        status: "agendada",
+        phone: patientDetails.phone, 
+    };
 
-    // Validação de conflito (sem alterações, já estava correta)
-    const isConflict = appointments.some(
-      (apt) =>
-        apt.doctorName === selectedDoctor.full_name &&
-        apt.date === formData.date &&
-        apt.time === formData.time
-    );
+    // 1. Carrega agendamentos existentes
+    const storedAppointmentsRaw = localStorage.getItem(APPOINTMENTS_STORAGE_KEY);
+    const currentAppointments = storedAppointmentsRaw ? JSON.parse(storedAppointmentsRaw) : [];
+    
+    // 2. Adiciona o novo agendamento
+    const updatedAppointments = [...currentAppointments, newAppointment];
 
-    if (isConflict) {
-      toast.error("Este horário já está ocupado para o médico selecionado.");
-      return;
-    }
+    // 3. Salva a lista atualizada no LocalStorage
+    localStorage.setItem(APPOINTMENTS_STORAGE_KEY, JSON.stringify(updatedAppointments));
 
-    // [ALTERAÇÃO 2] - Utilizando os dados do médico selecionado para location e phone
-    // e removendo os placeholders.
-    addAppointment({
-      doctorName: selectedDoctor.full_name,
-      specialty: selectedDoctor.specialty,
-      date: formData.date,
-      time: formData.time,
-      observations: formData.observations,
-      phone: selectedDoctor.phone_mobile,
-      location: ""
-    });
-
-    toast.success("Consulta agendada com sucesso!");
-    router.push('/patient/appointments');
-  };
-
-  // Validação de data passada (sem alterações, já estava correta)
-  const today = new Date().toISOString().split('T')[0];
+    alert(`Consulta com ${doctorDetails.name} agendada com sucesso!`);
+    
+    // Limpar o formulário após o sucesso (opcional)
+    setSelectedDoctor("");
+    setSelectedDate("");
+    setSelectedTime("");
+    setNotes("");
+  }
 
   return (
     <PatientLayout>
@@ -139,7 +100,7 @@ export default function ScheduleAppointmentPage() {
           <p className="text-gray-600">Escolha o médico, data e horário para sua consulta</p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="grid lg:grid-cols-3 gap-6">
           <div className="lg:col-span-2">
             <Card>
               <CardHeader>
@@ -150,41 +111,35 @@ export default function ScheduleAppointmentPage() {
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div className="space-y-2">
                     <Label htmlFor="doctor">Médico</Label>
-                    <Select
-                      value={formData.id}
-                      onValueChange={(value) => handleSelectChange('id', value)}
-                    >
+                    <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
                       <SelectTrigger>
-                        <SelectValue placeholder="Seleione um médico" />
+                        <SelectValue placeholder="Selecione um médico" />
                       </SelectTrigger>
                       <SelectContent>
                         {doctors.map((doctor) => (
                           <SelectItem key={doctor.id} value={doctor.id}>
-                            {doctor.full_name} - {doctor.specialty}
+                            {doctor.name} - {doctor.specialty}
                           </SelectItem>
                         ))}
                       </SelectContent>
                     </Select>
                   </div>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="date">Data</Label>
                       <Input
                         id="date"
-                        name="date"
                         type="date"
-                        value={formData.date}
-                        onChange={handleChange}
-                        min={today}
+                        value={selectedDate}
+                        onChange={(e) => setSelectedDate(e.target.value)}
+                        min={new Date().toISOString().split("T")[0]}
                       />
                     </div>
+
                     <div className="space-y-2">
                       <Label htmlFor="time">Horário</Label>
-                      <Select
-                        value={formData.time}
-                        onValueChange={(value) => handleSelectChange('time', value)}
-                      >
+                      <Select value={selectedTime} onValueChange={setSelectedTime}>
                         <SelectTrigger>
                           <SelectValue placeholder="Selecione um horário" />
                         </SelectTrigger>
@@ -200,18 +155,17 @@ export default function ScheduleAppointmentPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="observations">Observações (opcional)</Label>
+                    <Label htmlFor="notes">Observações (opcional)</Label>
                     <Textarea
-                      id="observations"
-                      name="observations"
+                      id="notes"
                       placeholder="Descreva brevemente o motivo da consulta ou observações importantes"
-                      value={formData.observations}
-                      onChange={handleChange}
-                      rows={4}
+                      value={notes}
+                      onChange={(e) => setNotes(e.target.value)}
+                      rows={3}
                     />
                   </div>
 
-                  <Button type="submit" className="w-full bg-gray-600 hover:bg-gray-700 text-white text-base py-6">
+                  <Button type="submit" className="w-full" disabled={!selectedDoctor || !selectedDate || !selectedTime}>
                     Agendar Consulta
                   </Button>
                 </form>
@@ -222,30 +176,30 @@ export default function ScheduleAppointmentPage() {
           <div className="space-y-6">
             <Card>
               <CardHeader>
-                <CardTitle className="flex items-center text-base">
+                <CardTitle className="flex items-center">
                   <Calendar className="mr-2 h-5 w-5" />
                   Resumo
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3 text-sm">
-                {formData.id ? (
-                  <div className="flex items-center">
-                    <User className="mr-2 h-4 w-4 text-gray-500" />
-                    <span>{doctors.find((d) => d.id === formData.id)?.full_name}</span>
-                  </div>
-                ) : <p className="text-gray-500">Preencha o formulário...</p>}
-                
-                {formData.date && (
-                  <div className="flex items-center">
-                    <Calendar className="mr-2 h-4 w-4 text-gray-500" />
-                    <span>{new Date(formData.date).toLocaleDateString("pt-BR", { timeZone: 'UTC' })}</span>
+              <CardContent className="space-y-4">
+                {selectedDoctor && (
+                  <div className="flex items-center space-x-2">
+                    <User className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm">{doctors.find((d) => d.id === selectedDoctor)?.name}</span>
                   </div>
                 )}
 
-                {formData.time && (
-                  <div className="flex items-center">
-                    <Clock className="mr-2 h-4 w-4 text-gray-500" />
-                    <span>{formData.time}</span>
+                {selectedDate && (
+                  <div className="flex items-center space-x-2">
+                    <Calendar className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm">{new Date(selectedDate).toLocaleDateString("pt-BR")}</span>
+                  </div>
+                )}
+
+                {selectedTime && (
+                  <div className="flex items-center space-x-2">
+                    <Clock className="h-4 w-4 text-gray-500" />
+                    <span className="text-sm">{selectedTime}</span>
                   </div>
                 )}
               </CardContent>
@@ -253,20 +207,18 @@ export default function ScheduleAppointmentPage() {
 
             <Card>
               <CardHeader>
-                <CardTitle className="text-base">Informações Importantes</CardTitle>
+                <CardTitle>Informações Importantes</CardTitle>
               </CardHeader>
-              <CardContent>
-                <ul className="space-y-2 text-sm text-gray-600 list-disc list-inside">
-                  <li>Chegue com 15 minutos de antecedência</li>
-                  <li>Traga documento com foto</li>
-                  <li>Traga carteirinha do convênio</li>
-                  <li>Traga exames anteriores, se houver</li>
-                </ul>
+              <CardContent className="text-sm text-gray-600 space-y-2">
+                <p>• Chegue com 15 minutos de antecedência</p>
+                <p>• Traga documento com foto</p>
+                <p>• Traga carteirinha do convênio</p>
+                <p>• Traga exames anteriores, se houver</p>
               </CardContent>
             </Card>
           </div>
         </div>
       </div>
     </PatientLayout>
-  );
+  )
 }
