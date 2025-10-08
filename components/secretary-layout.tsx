@@ -74,8 +74,8 @@ export default function SecretaryLayout({ children }: PatientLayoutProps) {
 
   const menuItems = [
     { href: "##", icon: Home, label: "Dashboard" },
-    { href: "###", icon: Calendar, label: "Consultas" },
-    { href: "#", icon: Clock, label: "Agendar Consulta" },
+    { href: "/secretary/appointments", icon: Calendar, label: "Consultas" },
+    { href: "/secretary/schedule", icon: Clock, label: "Agendar Consulta" },
     { href: "/secretary/pacientes", icon: User, label: "Pacientes" },
   ]
 
