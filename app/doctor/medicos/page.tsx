@@ -109,28 +109,28 @@ export default function PacientesPage() {
     <DoctorLayout>
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900">Pacientes</h1>
-          <p className="text-gray-600">Lista de pacientes vinculados</p>
+          <h1 className="text-2xl font-bold text-foreground">Pacientes</h1>
+          <p className="text-muted-foreground">Lista de pacientes vinculados</p>
         </div>
 
-        <div className="bg-white rounded-lg border border-gray-200">
+        <div className="bg-card rounded-lg border border-border">
           <div className="overflow-x-auto">
             <table className="w-full">
-              <thead className="bg-gray-50 border-b border-gray-200">
+              <thead className="bg-muted border-b border-border">
                 <tr>
-                  <th className="text-left p-4 font-medium text-gray-700">Nome</th>
-                  <th className="text-left p-4 font-medium text-gray-700">Telefone</th>
-                  <th className="text-left p-4 font-medium text-gray-700">Cidade</th>
-                  <th className="text-left p-4 font-medium text-gray-700">Estado</th>
-                  <th className="text-left p-4 font-medium text-gray-700">Último atendimento</th>
-                  <th className="text-left p-4 font-medium text-gray-700">Próximo atendimento</th>
-                  <th className="text-left p-4 font-medium text-gray-700">Ações</th>
+                  <th className="text-left p-4 font-medium text-foreground">Nome</th>
+                  <th className="text-left p-4 font-medium text-foreground">Telefone</th>
+                  <th className="text-left p-4 font-medium text-foreground">Cidade</th>
+                  <th className="text-left p-4 font-medium text-foreground">Estado</th>
+                  <th className="text-left p-4 font-medium text-foreground">Último atendimento</th>
+                  <th className="text-left p-4 font-medium text-foreground">Próximo atendimento</th>
+                  <th className="text-left p-4 font-medium text-foreground">Ações</th>
                 </tr>
               </thead>
               <tbody>
                 {loading ? (
                   <tr>
-                    <td colSpan={7} className="p-6 text-gray-600">
+                    <td colSpan={7} className="p-6 text-muted-foreground">
                       Carregando pacientes...
                     </td>
                   </tr>
@@ -140,23 +140,23 @@ export default function PacientesPage() {
                   </tr>
                 ) : pacientes.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="p-8 text-center text-gray-500">
+                    <td colSpan={7} className="p-8 text-center text-muted-foreground">
                       Nenhum paciente encontrado
                     </td>
                   </tr>
                 ) : (
                   currentItems.map((p) => (
-                    <tr key={p.id} className="border-b border-gray-100 hover:bg-gray-50">
+                    <tr key={p.id} className="border-b border-border hover:bg-accent">
                       <td className="p-4">{p.nome}</td>
-                      <td className="p-4 text-gray-600">{p.telefone}</td>
-                      <td className="p-4 text-gray-600">{p.cidade}</td>
-                      <td className="p-4 text-gray-600">{p.estado}</td>
-                      <td className="p-4 text-gray-600">{p.ultimoAtendimento}</td>
-                      <td className="p-4 text-gray-600">{p.proximoAtendimento}</td>
+                      <td className="p-4 text-muted-foreground">{p.telefone}</td>
+                      <td className="p-4 text-muted-foreground">{p.cidade}</td>
+                      <td className="p-4 text-muted-foreground">{p.estado}</td>
+                      <td className="p-4 text-muted-foreground">{p.ultimoAtendimento}</td>
+                      <td className="p-4 text-muted-foreground">{p.proximoAtendimento}</td>
                       <td className="p-4">
                         <DropdownMenu>
                           <DropdownMenuTrigger asChild>
-                            <button className="text-blue-600 hover:underline">Ações</button>
+                            <button className="text-primary hover:underline">Ações</button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
                             <DropdownMenuItem onClick={() => handleOpenModal(p)}>
@@ -192,12 +192,12 @@ export default function PacientesPage() {
               </tbody>
             </table>
           </div>
-          <div className="flex justify-center space-x-2 mt-4">
+          <div className="flex justify-center space-x-2 mt-4 p-4">
             {Array.from({ length: Math.ceil(pacientes.length / itemsPerPage) }, (_, i) => (
               <button
                 key={i}
                 onClick={() => paginate(i + 1)}
-                className={`px-4 py-2 rounded-md ${currentPage === i + 1 ? 'bg-blue-500 text-white' : 'bg-gray-200'}`}
+                className={`px-4 py-2 rounded-md ${currentPage === i + 1 ? 'bg-primary text-primary-foreground' : 'bg-secondary text-secondary-foreground'}`}
               >
                 {i + 1}
               </button>

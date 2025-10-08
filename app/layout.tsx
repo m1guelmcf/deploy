@@ -3,8 +3,10 @@ import { GeistSans } from 'geist/font/sans'
 import { GeistMono } from 'geist/font/mono'
 import { Analytics } from '@vercel/analytics/next'
 import './globals.css'
-// [PASSO 1.2] - Importando o nosso provider
 import { AppointmentsProvider } from './context/AppointmentsContext'
+import { AccessibilityProvider } from './context/AccessibilityContext'
+import { AccessibilityModal } from '@/components/accessibility-modal'
+import { ThemeInitializer } from '@/components/theme-initializer'
 
 export const metadata: Metadata = {
   title: 'Clinic App',
@@ -18,12 +20,15 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body className={`font-sans ${GeistSans.variable} ${GeistMono.variable}`}>
-        {/* [PASSO 1.2] - Envolvendo a aplicação com o provider */}
-        <AppointmentsProvider>
-          {children}
-        </AppointmentsProvider>
+        <ThemeInitializer />
+        <AccessibilityProvider>
+          <AppointmentsProvider>
+            {children}
+          </AppointmentsProvider>
+          <AccessibilityModal />
+        </AccessibilityProvider>
         <Analytics />
       </body>
     </html>
