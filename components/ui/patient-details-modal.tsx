@@ -5,8 +5,8 @@ import {
 } from "@/components/ui/dialog";
 
 interface PatientDetailsModalProps {
-  patient: any;
   isOpen: boolean;
+  patient: any;
   onClose: () => void;
 }
 

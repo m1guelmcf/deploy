@@ -5,6 +5,7 @@ import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
 import { Button } from "@/components/ui/button"
+import Cookies from "js-cookie"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
@@ -66,14 +67,31 @@ export default function HospitalLayout({ children }: HospitalLayoutProps) {
   }, [])
 
   useEffect(() => {
-    const data = localStorage.getItem("patientData")
-    if (data) {
-      setPatientData(JSON.parse(data))
-    } else {
-      router.push("/patient/login")
-    }
-  }, [router])
+    // 1. Procuramos pela chave correta: 'user_info'
+    const userInfoString = localStorage.getItem("user_info");
+    // 2. Para mais segurança, verificamos também se o token de acesso existe no cookie
+    const token = Cookies.get("access_token");
 
+    if (userInfoString && token) {
+      const userInfo = JSON.parse(userInfoString);
+
+      // 3. Adaptamos os dados para a estrutura que seu layout espera (PatientData)
+      // Usamos os dados do objeto 'user' que a API do Supabase nos deu
+      setPatientData({
+        name: userInfo.user_metadata?.full_name || "Paciente",
+        email: userInfo.email || "",
+        // Os campos abaixo não vêm do login, então os deixamos vazios por enquanto
+        phone: userInfo.phone || "",
+        cpf: "", 
+        birthDate: "",
+        address: "",
+      });
+    } else {
+      // Se as informações do usuário ou o token não forem encontrados, mandamos para o login.
+      router.push("/patient/login");
+    }
+  }, [router]);
+  
   const handleLogout = () => setShowLogoutDialog(true)
 
   const confirmLogout = () => {
