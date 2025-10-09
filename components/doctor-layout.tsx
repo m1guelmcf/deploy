@@ -24,11 +24,11 @@ interface DoctorData {
     permissions: object;
 }
 
-interface PatientLayoutProps {
+interface DoctorLayoutProps {
     children: React.ReactNode;
 }
 
-export default function DoctorLayout({ children }: PatientLayoutProps) {
+export default function DoctorLayout({ children }: DoctorLayoutProps) {
     const [doctorData, setDoctorData] = useState<DoctorData | null>(null);
     const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
     const [showLogoutDialog, setShowLogoutDialog] = useState(false);
@@ -48,19 +48,19 @@ export default function DoctorLayout({ children }: PatientLayoutProps) {
     }, [router]);
 
     useEffect(() => {
-  const handleResize = () => setWindowWidth(window.innerWidth);
-  handleResize(); // inicializa com a largura atual
-  window.addEventListener("resize", handleResize);
-  return () => window.removeEventListener("resize", handleResize);
-}, []);
+        const handleResize = () => setWindowWidth(window.innerWidth);
+        handleResize(); // inicializa com a largura atual
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
 
-useEffect(() => {
-  if (isMobile) {
-    setSidebarCollapsed(true);
-  } else {
-    setSidebarCollapsed(false);
-  }
-}, [isMobile]);
+    useEffect(() => {
+        if (isMobile) {
+            setSidebarCollapsed(true);
+        } else {
+            setSidebarCollapsed(false);
+        }
+    }, [isMobile]);
 
     const handleLogout = () => {
         setShowLogoutDialog(true);
@@ -82,7 +82,7 @@ useEffect(() => {
 
     const menuItems = [
         {
-            href: "#",
+            href: "/doctor/dashboard",
             icon: Home,
             label: "Dashboard",
             // Botão para o dashboard do médico
@@ -149,46 +149,62 @@ useEffect(() => {
 
                 // ... (seu código anterior)
 
-            {/* Sidebar para desktop */}
-            <div className={`bg-card border-r border-border transition-all duration-300 ${sidebarCollapsed ? "w-16" : "w-64"} fixed left-0 top-0 h-screen flex flex-col z-50`}>
-                <div className="p-4 border-b border-border">
-                    <div className="flex items-center justify-between">
-                        {!sidebarCollapsed && (
-                            <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                                    <div className="w-4 h-4 bg-primary-foreground rounded-sm"></div>
+                {/* Sidebar para desktop */}
+                <div className={`bg-card border-r border-border transition-all duration-300 ${sidebarCollapsed ? "w-16" : "w-64"} fixed left-0 top-0 h-screen flex flex-col z-50`}>
+                    <div className="p-4 border-b border-border">
+                        <div className="flex items-center justify-between">
+                            {!sidebarCollapsed && (
+                                <div className="flex items-center gap-2">
+                                    <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
+                                        <div className="w-4 h-4 bg-primary-foreground rounded-sm"></div>
+                                    </div>
+                                    <span className="font-semibold text-foreground">MedConnect</span>
                                 </div>
-                                <span className="font-semibold text-foreground">MedConnect</span>
-                            </div>
-                        )}
-                        <Button variant="ghost" size="sm" onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="p-1">
-                            {sidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-                        </Button>
+                            )}
+                            <Button variant="ghost" size="sm" onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="p-1">
+                                {sidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+                            </Button>
+                        </div>
                     </div>
-                </div>
 
-                <nav className="flex-1 p-2 overflow-y-auto">
-                    {menuItems.map((item) => {
-                        const Icon = item.icon;
-                        const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+                    <nav className="flex-1 p-2 overflow-y-auto">
+                        {menuItems.map((item) => {
+                            const Icon = item.icon;
+                            const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
 
-                        return (
-                            <Link key={item.href} href={item.href}>
-                                <div className={`flex items-center gap-3 px-3 py-2 rounded-lg mb-1 transition-colors ${isActive ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}>
-                                    <Icon className="w-5 h-5 flex-shrink-0" />
-                                    {!sidebarCollapsed && <span className="font-medium">{item.label}</span>}
-                                </div>
-                            </Link>
-                        );
-                    })}
-                </nav>
+                            return (
+                                <Link key={item.href} href={item.href}>
+                                    <div className={`flex items-center gap-3 px-3 py-2 rounded-lg mb-1 transition-colors ${isActive ? "bg-accent text-accent-foreground" : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"}`}>
+                                        <Icon className="w-5 h-5 flex-shrink-0" />
+                                        {!sidebarCollapsed && <span className="font-medium">{item.label}</span>}
+                                    </div>
+                                </Link>
+                            );
+                        })}
+                    </nav>
 
-                <div className="border-t p-4 mt-auto">
-                    <div className="flex items-center space-x-3 mb-4">
-                        {/* Se a sidebar estiver recolhida, o avatar e o texto do usuário também devem ser condensados ou ocultados */}
-                        {!sidebarCollapsed && (
-                            <>
-                                <Avatar>
+                    <div className="border-t p-4 mt-auto">
+                        <div className="flex items-center space-x-3 mb-4">
+                            {/* Se a sidebar estiver recolhida, o avatar e o texto do usuário também devem ser condensados ou ocultados */}
+                            {!sidebarCollapsed && (
+                                <>
+                                    <Avatar>
+                                        <AvatarImage src="/placeholder.svg?height=40&width=40" />
+                                        <AvatarFallback>
+                                            {doctorData.name
+                                                .split(" ")
+                                                .map((n) => n[0])
+                                                .join("")}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium text-foreground truncate">{doctorData.name}</p>
+                                        <p className="text-xs text-muted-foreground truncate">{doctorData.specialty}</p>
+                                    </div>
+                                </>
+                            )}
+                            {sidebarCollapsed && (
+                                <Avatar className="mx-auto"> {/* Centraliza o avatar quando recolhido */}
                                     <AvatarImage src="/placeholder.svg?height=40&width=40" />
                                     <AvatarFallback>
                                         {doctorData.name
@@ -197,36 +213,20 @@ useEffect(() => {
                                             .join("")}
                                     </AvatarFallback>
                                 </Avatar>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-foreground truncate">{doctorData.name}</p>
-                                    <p className="text-xs text-muted-foreground truncate">{doctorData.specialty}</p>
-                                </div>
-                            </>
-                        )}
-                        {sidebarCollapsed && (
-                            <Avatar className="mx-auto"> {/* Centraliza o avatar quando recolhido */}
-                                <AvatarImage src="/placeholder.svg?height=40&width=40" />
-                                <AvatarFallback>
-                                    {doctorData.name
-                                        .split(" ")
-                                        .map((n) => n[0])
-                                        .join("")}
-                                </AvatarFallback>
-                            </Avatar>
-                        )}
-                    </div>
+                            )}
+                        </div>
 
-                    {/* Novo botão de sair, usando a mesma estrutura dos itens de menu */}
-                    <div
-                        className={`flex items-center gap-3 px-3 py-2 rounded-lg mb-1 transition-colors text-muted-foreground hover:bg-accent hover:text-accent-foreground cursor-pointer ${sidebarCollapsed ? "justify-center" : ""}`}
-                        onClick={handleLogout}
-                    >
-                        <LogOut className="w-5 h-5 flex-shrink-0" />
-                        {!sidebarCollapsed && <span className="font-medium">Sair</span>}
+                        {/* Novo botão de sair, usando a mesma estrutura dos itens de menu */}
+                        <div
+                            className={`flex items-center gap-3 px-3 py-2 rounded-lg mb-1 transition-colors text-muted-foreground hover:bg-accent hover:text-accent-foreground cursor-pointer ${sidebarCollapsed ? "justify-center" : ""}`}
+                            onClick={handleLogout}
+                        >
+                            <LogOut className="w-5 h-5 flex-shrink-0" />
+                            {!sidebarCollapsed && <span className="font-medium">Sair</span>}
+                        </div>
                     </div>
                 </div>
-            </div>
-        
+
             </div>
 
             {/* Sidebar para mobile (apresentado como um menu overlay) */}
@@ -287,7 +287,7 @@ useEffect(() => {
 
 
             {/* Main Content */}
-      <div className={`flex-1 flex flex-col transition-all duration-300 ${sidebarCollapsed ? "ml-16" : "ml-64"}`}>
+            <div className={`flex-1 flex flex-col transition-all duration-300 ${sidebarCollapsed ? "ml-16" : "ml-64"}`}>
                 {/* Header */}
                 <header className="bg-card border-b border-border px-6 py-4">
                     <div className="flex items-center justify-between">

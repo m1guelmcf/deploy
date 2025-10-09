@@ -37,11 +37,11 @@ interface ManagerData {
   permissions: object;
 }
 
-interface PatientLayoutProps {
+interface ManagerLayoutProps {
   children: React.ReactNode;
 }
 
-export default function ManagerLayout({ children }: PatientLayoutProps) {
+export default function ManagerLayout({ children }: ManagerLayoutProps) {
   const [managerData, setManagerData] = useState<ManagerData | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
@@ -84,7 +84,7 @@ export default function ManagerLayout({ children }: PatientLayoutProps) {
   const cancelLogout = () => setShowLogoutDialog(false);
 
   const menuItems = [
-    { href: "#", icon: Home, label: "Dashboard" },
+    { href: "/manager/dashboard", icon: Home, label: "Dashboard" },
     { href: "#", icon: Calendar, label: "Relatórios gerenciais" },
     { href: "#", icon: User, label: "Gestão de Usuários" },
     { href: "#", icon: User, label: "Gestão de Médicos" },
@@ -139,11 +139,10 @@ export default function ManagerLayout({ children }: PatientLayoutProps) {
             return (
               <Link key={item.href} href={item.href}>
                 <div
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg mb-1 transition-colors ${
-                    isActive
-                      ? "bg-accent text-accent-foreground"
-                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                  }`}
+                  className={`flex items-center gap-3 px-3 py-2 rounded-lg mb-1 transition-colors ${isActive
+                    ? "bg-accent text-accent-foreground"
+                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                    }`}
                 >
                   <Icon className="w-5 h-5 flex-shrink-0" />
                   {!sidebarCollapsed && (

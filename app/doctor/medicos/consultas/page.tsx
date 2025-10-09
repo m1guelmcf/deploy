@@ -2,7 +2,7 @@
 
 import type React from "react";
 import { useState, useEffect } from "react";
-import DoctorLayout from "@/components/doctor-layout"; 
+import DoctorLayout from "@/components/doctor-layout";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Clock, Calendar as CalendarIcon, MapPin, Phone, User, X, RefreshCw } from "lucide-react";
@@ -19,7 +19,7 @@ const APPOINTMENTS_STORAGE_KEY = "clinic-appointments";
 interface LocalStorageAppointment {
     id: number;
     patientName: string;
-    doctor: string;       
+    doctor: string;
     specialty: string;
     date: string; // Data no formato YYYY-MM-DD
     time: string; // Hora no formato HH:MM
@@ -28,13 +28,13 @@ interface LocalStorageAppointment {
     phone: string;
 }
 
-const LOGGED_IN_DOCTOR_NAME = "Dr. João Santos"; 
+const LOGGED_IN_DOCTOR_NAME = "Dr. João Santos";
 
 // Função auxiliar para comparar se duas datas (Date objects) são o mesmo dia
 const isSameDay = (date1: Date, date2: Date) => {
     return date1.getFullYear() === date2.getFullYear() &&
-           date1.getMonth() === date2.getMonth() &&
-           date1.getDate() === date2.getDate();
+        date1.getMonth() === date2.getMonth() &&
+        date1.getDate() === date2.getDate();
 };
 
 // --- COMPONENTE PRINCIPAL ---
@@ -43,10 +43,10 @@ export default function DoctorAppointmentsPage() {
     const [allAppointments, setAllAppointments] = useState<LocalStorageAppointment[]>([]);
     const [filteredAppointments, setFilteredAppointments] = useState<LocalStorageAppointment[]>([]);
     const [isLoading, setIsLoading] = useState(true);
-    
+
     // NOVO ESTADO 1: Armazena os dias com consultas (para o calendário)
     const [bookedDays, setBookedDays] = useState<Date[]>([]);
-    
+
     // NOVO ESTADO 2: Armazena a data selecionada no calendário
     const [selectedCalendarDate, setSelectedCalendarDate] = useState<Date | undefined>(new Date());
 
@@ -58,20 +58,20 @@ export default function DoctorAppointmentsPage() {
     useEffect(() => {
         if (selectedCalendarDate) {
             const dateString = format(selectedCalendarDate, 'yyyy-MM-dd');
-            
+
             // Filtra a lista completa de agendamentos pela data selecionada
             const todayAppointments = allAppointments
                 .filter(app => app.date === dateString)
                 .sort((a, b) => a.time.localeCompare(b.time)); // Ordena por hora
-            
+
             setFilteredAppointments(todayAppointments);
         } else {
             // Se nenhuma data estiver selecionada (ou se for limpa), mostra todos (ou os de hoje)
             const todayDateString = format(new Date(), 'yyyy-MM-dd');
             const todayAppointments = allAppointments
                 .filter(app => app.date === todayDateString)
-                .sort((a, b) => a.time.localeCompare(b.time)); 
-                
+                .sort((a, b) => a.time.localeCompare(b.time));
+
             setFilteredAppointments(todayAppointments);
         }
     }, [allAppointments, selectedCalendarDate]);
@@ -87,7 +87,7 @@ export default function DoctorAppointmentsPage() {
 
             // 1. EXTRAI E PREPARA AS DATAS PARA O CALENDÁRIO
             const uniqueBookedDates = Array.from(new Set(appointmentsToShow.map(app => app.date)));
-            
+
             // Converte YYYY-MM-DD para objetos Date, garantindo que o tempo seja meia-noite (00:00:00)
             const dateObjects = uniqueBookedDates.map(dateString => new Date(dateString + 'T00:00:00'));
 
@@ -122,12 +122,12 @@ export default function DoctorAppointmentsPage() {
         const storedAppointmentsRaw = localStorage.getItem(APPOINTMENTS_STORAGE_KEY);
         const allAppts: LocalStorageAppointment[] = storedAppointmentsRaw ? JSON.parse(storedAppointmentsRaw) : [];
 
-        const updatedAppointments = allAppts.map(app => 
+        const updatedAppointments = allAppts.map(app =>
             app.id === id ? { ...app, status: "cancelada" as const } : app
         );
 
         localStorage.setItem(APPOINTMENTS_STORAGE_KEY, JSON.stringify(updatedAppointments));
-        loadAppointments(); 
+        loadAppointments();
         toast.info(`Consulta cancelada com sucesso.`);
     };
 
@@ -135,8 +135,8 @@ export default function DoctorAppointmentsPage() {
         toast.info(`Reagendamento da Consulta ID: ${id}. Navegar para a página de agendamento.`);
     };
 
-    const displayDate = selectedCalendarDate ? 
-        new Date(selectedCalendarDate).toLocaleDateString("pt-BR", {weekday: 'long', day: '2-digit', month: 'long'}) : 
+    const displayDate = selectedCalendarDate ?
+        new Date(selectedCalendarDate).toLocaleDateString("pt-BR", { weekday: 'long', day: '2-digit', month: 'long' }) :
         "Selecione uma data";
 
 
@@ -158,7 +158,7 @@ export default function DoctorAppointmentsPage() {
 
                 {/* NOVO LAYOUT DE DUAS COLUNAS */}
                 <div className="grid lg:grid-cols-3 gap-6">
-                    
+
                     {/* COLUNA 1: CALENDÁRIO */}
                     <div className="lg:col-span-1">
                         <Card>
@@ -176,10 +176,10 @@ export default function DoctorAppointmentsPage() {
                                     onSelect={setSelectedCalendarDate}
                                     initialFocus
                                     // A CHAVE DO HIGHLIGHT: Passa o array de datas agendadas
-                                    modifiers={{ booked: bookedDays }} 
+                                    modifiers={{ booked: bookedDays }}
                                     // Define o estilo CSS para o modificador 'booked'
-                                    modifiersClassNames={{ 
-                                        booked: "bg-blue-600 text-white aria-selected:!bg-blue-700 hover:!bg-blue-700/90" 
+                                    modifiersClassNames={{
+                                        booked: "bg-blue-600 text-white aria-selected:!bg-blue-700 hover:!bg-blue-700/90"
                                     }}
                                     className="rounded-md border p-2"
                                 />
@@ -233,23 +233,23 @@ export default function DoctorAppointmentsPage() {
                                                 </div>
                                                 <div className="flex items-center text-sm text-gray-700">
                                                     <Phone className="mr-2 h-4 w-4 text-gray-500" />
-                                                    {appointment.phone || "N/A"} 
+                                                    {appointment.phone || "N/A"}
                                                 </div>
                                             </div>
 
                                             <div className="flex flex-col justify-center items-end">
                                                 {showActions && (
                                                     <div className="flex space-x-2">
-                                                        <Button 
-                                                            variant="outline" 
+                                                        <Button
+                                                            variant="outline"
                                                             size="sm"
                                                             onClick={() => handleReSchedule(appointment.id)}
                                                         >
                                                             <RefreshCw className="mr-2 h-4 w-4" />
                                                             Reagendar
                                                         </Button>
-                                                        <Button 
-                                                            variant="destructive" 
+                                                        <Button
+                                                            variant="destructive"
                                                             size="sm"
                                                             onClick={() => handleCancel(appointment.id)}
                                                         >

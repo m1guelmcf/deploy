@@ -41,11 +41,11 @@ interface SecretaryData {
   permissions: object
 }
 
-interface PatientLayoutProps {
+interface SecretaryLayoutProps {
   children: React.ReactNode
 }
 
-export default function SecretaryLayout({ children }: PatientLayoutProps) {
+export default function SecretaryLayout({ children }: SecretaryLayoutProps) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [showLogoutDialog, setShowLogoutDialog] = useState(false)
   const router = useRouter()
@@ -73,7 +73,7 @@ export default function SecretaryLayout({ children }: PatientLayoutProps) {
   const cancelLogout = () => setShowLogoutDialog(false)
 
   const menuItems = [
-    { href: "##", icon: Home, label: "Dashboard" },
+    { href: "/secretary/dashboard", icon: Home, label: "Dashboard" },
     { href: "/secretary/appointments", icon: Calendar, label: "Consultas" },
     { href: "/secretary/schedule", icon: Clock, label: "Agendar Consulta" },
     { href: "/secretary/pacientes", icon: User, label: "Pacientes" },
@@ -132,11 +132,10 @@ export default function SecretaryLayout({ children }: PatientLayoutProps) {
             return (
               <Link key={item.href} href={item.href}>
                 <div
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg mb-1 transition-colors ${
-                    isActive
-                      ? "bg-accent text-accent-foreground"
-                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                  }`}
+                  className={`flex items-center gap-3 px-3 py-2 rounded-lg mb-1 transition-colors ${isActive
+                    ? "bg-accent text-accent-foreground"
+                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                    }`}
                 >
                   <Icon className="w-5 h-5 flex-shrink-0" />
                   {!sidebarCollapsed && <span className="font-medium">{item.label}</span>}
@@ -189,9 +188,8 @@ export default function SecretaryLayout({ children }: PatientLayoutProps) {
 
       {/* Main Content */}
       <div
-        className={`flex-1 flex flex-col transition-all duration-300 ${
-          sidebarCollapsed ? "ml-16" : "ml-64"
-        }`}
+        className={`flex-1 flex flex-col transition-all duration-300 ${sidebarCollapsed ? "ml-16" : "ml-64"
+          }`}
       >
         {/* Header */}
         <header className="bg-card border-b border-border px-6 py-4">
