@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 // Importações de componentes omitidas para brevidade, mas estão no código original
 import PatientLayout from "@/components/patient-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
@@ -11,6 +11,15 @@ import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
 import { Calendar, Clock, User } from "lucide-react"
+import { doctorsService } from "services/doctorsApi.mjs";
+
+interface Doctor {
+    id: string;
+    full_name: string;
+    specialty: string;
+    phone_mobile: string;
+    
+}
 
 // Chave do LocalStorage, a mesma usada em secretarypage.tsx
 const APPOINTMENTS_STORAGE_KEY = "clinic-appointments";
@@ -20,13 +29,30 @@ export default function ScheduleAppointment() {
   const [selectedDate, setSelectedDate] = useState("")
   const [selectedTime, setSelectedTime] = useState("")
   const [notes, setNotes] = useState("")
+  const [doctors, setDoctors] = useState<Doctor[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  const doctors = [
-    { id: "1", name: "Dr. João Silva", specialty: "Cardiologia" },
-    { id: "2", name: "Dra. Maria Santos", specialty: "Dermatologia" },
-    { id: "3", name: "Dr. Pedro Costa", specialty: "Ortopedia" },
-    { id: "4", name: "Dra. Ana Lima", specialty: "Ginecologia" },
-  ]
+
+  const fetchDoctors = useCallback(async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        
+        const data: Doctor[] = await doctorsService.list();
+        setDoctors(data || []); 
+      } catch (e: any) {
+        console.error("Erro ao carregar lista de médicos:", e);
+        setError("Não foi possível carregar a lista de médicos. Verifique a conexão com a API.");
+        setDoctors([]);
+      } finally {
+        setLoading(false);
+      }
+    }, []);
+
+  useEffect(() => {
+      fetchDoctors();
+  }, [fetchDoctors]);
 
   const availableTimes = [
     "08:00",
@@ -65,7 +91,7 @@ export default function ScheduleAppointment() {
     const newAppointment = {
         id: new Date().getTime(), // ID único simples
         patientName: patientDetails.full_name,
-        doctor: doctorDetails.name, // Nome completo do médico (necessário para a listagem)
+        doctor: doctorDetails.full_name, // Nome completo do médico (necessário para a listagem)
         specialty: doctorDetails.specialty,
         date: selectedDate,
         time: selectedTime,
@@ -83,7 +109,7 @@ export default function ScheduleAppointment() {
     // 3. Salva a lista atualizada no LocalStorage
     localStorage.setItem(APPOINTMENTS_STORAGE_KEY, JSON.stringify(updatedAppointments));
 
-    alert(`Consulta com ${doctorDetails.name} agendada com sucesso!`);
+    alert(`Consulta com ${doctorDetails.full_name} agendada com sucesso!`);
     
     // Limpar o formulário após o sucesso (opcional)
     setSelectedDoctor("");
@@ -118,7 +144,7 @@ export default function ScheduleAppointment() {
                       <SelectContent>
                         {doctors.map((doctor) => (
                           <SelectItem key={doctor.id} value={doctor.id}>
-                            {doctor.name} - {doctor.specialty}
+                            {doctor.full_name} - {doctor.specialty}
                           </SelectItem>
                         ))}
                       </SelectContent>
@@ -185,7 +211,7 @@ export default function ScheduleAppointment() {
                 {selectedDoctor && (
                   <div className="flex items-center space-x-2">
                     <User className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm">{doctors.find((d) => d.id === selectedDoctor)?.name}</span>
+                    <span className="text-sm">{doctors.find((d) => d.id === selectedDoctor)?.full_name}</span>
                   </div>
                 )}
 

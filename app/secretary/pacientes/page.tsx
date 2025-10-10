@@ -126,12 +126,12 @@ export default function PacientesPage() {
             <div className="space-y-6">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                     <div>
-                        <h1 className="text-xl md:text-2xl font-bold text-gray-900">Pacientes</h1>
-                        <p className="text-gray-600 text-sm md:text-base">Gerencie as informações de seus pacientes</p>
+                        <h1 className="text-xl md:text-2xl font-bold text-foreground">Pacientes</h1>
+                        <p className="text-muted-foreground text-sm md:text-base">Gerencie as informações de seus pacientes</p>
                     </div>
                     <div className="flex gap-2">
                         <Link href="/secretary/pacientes/novo">
-                            <Button className="bg-blue-600 hover:bg-blue-700 w-full md:w-auto">
+                            <Button className="w-full md:w-auto">
                                 <Plus className="w-4 h-4 mr-2" />
                                 Adicionar
                             </Button>
@@ -139,10 +139,10 @@ export default function PacientesPage() {
                     </div>
                 </div>
 
-                <div className="flex flex-col md:flex-row flex-wrap gap-4 bg-white p-4 rounded-lg border border-gray-200">
+                <div className="flex flex-col md:flex-row flex-wrap gap-4 bg-card p-4 rounded-lg border border-border">
                     {/* Convênio */}
                     <div className="flex items-center gap-2 w-full md:w-auto">
-                        <span className="text-sm font-medium text-gray-700">Convênio</span>
+                        <span className="text-sm font-medium text-foreground">Convênio</span>
                         <Select value={convenioFilter} onValueChange={setConvenioFilter}>
                             <SelectTrigger className="w-full md:w-40">
                                 <SelectValue placeholder="Selecione o Convênio" />
@@ -157,7 +157,7 @@ export default function PacientesPage() {
                     </div>
 
                     <div className="flex items-center gap-2 w-full md:w-auto">
-                        <span className="text-sm font-medium text-gray-700">VIP</span>
+                        <span className="text-sm font-medium text-foreground">VIP</span>
                         <Select value={vipFilter} onValueChange={setVipFilter}>
                             <SelectTrigger className="w-full md:w-32">
                                 <SelectValue placeholder="Selecione" />
@@ -170,7 +170,7 @@ export default function PacientesPage() {
                         </Select>
                     </div>
                     <div className="flex items-center gap-2 w-full md:w-auto">
-                        <span className="text-sm font-medium text-gray-700">Aniversariantes</span>
+                        <span className="text-sm font-medium text-foreground">Aniversariantes</span>
                         <Select>
                             <SelectTrigger className="w-full md:w-32">
                                 <SelectValue placeholder="Selecione" />
@@ -184,7 +184,7 @@ export default function PacientesPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-gray-700">VIP</span>
+                        <span className="text-sm font-medium text-foreground">VIP</span>
                         <Select value={vipFilter} onValueChange={setVipFilter}>
                             <SelectTrigger className="w-32">
                                 <SelectValue placeholder="Selecione" />
@@ -198,7 +198,7 @@ export default function PacientesPage() {
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-gray-700">Aniversariantes</span>
+                        <span className="text-sm font-medium text-foreground">Aniversariantes</span>
                         <Select>
                             <SelectTrigger className="w-32">
                                 <SelectValue placeholder="Selecione" />
@@ -211,7 +211,7 @@ export default function PacientesPage() {
                         </Select>
                     </div>
 
-                    <Button variant="outline" className="ml-auto bg-transparent w-full md:w-auto">
+                    <Button variant="outline" className="ml-auto w-full md:w-auto">
                         <Filter className="w-4 h-4 mr-2" />
                         Filtro avançado
                     </Button>
