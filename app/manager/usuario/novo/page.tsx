@@ -3,54 +3,51 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { Button } from "components/ui/button"
+import { Input } from "components/ui/input"
+import { Label } from "components/ui/label"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "components/ui/select"
 import { Save, Loader2 } from "lucide-react" 
-import ManagerLayout from "@/components/manager-layout"
+import ManagerLayout from "components/manager-layout"
+import { usersService } from "services/usersApi.mjs";
 
-// Mock user service for demonstration. Replace with your actual API service.
-const usersService = {
-  create: async (payload: any) => {
-    console.log("API Call: Creating user with payload:", payload);
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 1000));
-    // Simulate a success response
-    return { id: Date.now(), ...payload };
-    // To simulate an error, you could throw an error here:
-    // throw new Error("O e-mail informado já está em uso.");
-  }
-};
 
-// Define the structure for our form data
 interface UserFormData {
   email: string;
   password: string;
   nomeCompleto: string;
   telefone: string;
-  papel: string; // e.g., 'admin', 'gestor', 'medico', etc.
+  cargo: string;
 }
 
-// Define the initial state for the form
+
 const defaultFormData: UserFormData = {
   email: '',
   password: '',
   nomeCompleto: '',
   telefone: '',
-  papel: '',
+  cargo: '',
 };
 
-// Helper function to remove non-digit characters
 const cleanNumber = (value: string): string => value.replace(/\D/g, '');
 
-// Helper function to format a phone number
+
+
 const formatPhone = (value: string): string => {
-    const cleaned = cleanNumber(value).substring(0, 11);
-    if (cleaned.length > 10) {
-        return cleaned.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
-    }
-    return cleaned.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+  const cleaned = cleanNumber(value).substring(0, 11);
+  
+ 
+  if (cleaned.length === 11) {
+      return cleaned.replace(/(\d{2})(\d{5})(\d{4})/, '($1) $2-$3');
+  }
+  
+
+  if (cleaned.length === 10) {
+      return cleaned.replace(/(\d{2})(\d{4})(\d{4})/, '($1) $2-$3');
+  }
+  
+
+  return cleaned;
 };
 
 export default function NovoUsuarioPage() {
@@ -59,7 +56,7 @@ export default function NovoUsuarioPage() {
   const [isSaving, setIsSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Handles changes in form inputs
+
   const handleInputChange = (key: keyof UserFormData, value: string) => {
     const updatedValue = key === 'telefone' ? formatPhone(value) : value;
     setFormData((prev) => ({ ...prev, [key]: updatedValue }));
@@ -71,7 +68,7 @@ export default function NovoUsuarioPage() {
     setError(null);
 
     // Basic validation
-    if (!formData.email || !formData.password || !formData.nomeCompleto || !formData.papel) {
+    if (!formData.email || !formData.password || !formData.nomeCompleto || !formData.cargo) {
       setError("Por favor, preencha todos os campos obrigatórios.");
       return;
     }
@@ -83,13 +80,12 @@ export default function NovoUsuarioPage() {
       email: formData.email,
       password: formData.password,
       full_name: formData.nomeCompleto,
-      phone: formData.telefone.trim() || null, // Send null if empty
-      role: formData.papel,
+      phone: formData.telefone.trim() || null, 
+      role: formData.cargo,
     };
 
     try {
-      await usersService.create(payload); 
-      // On success, redirect to the main user list page
+      await usersService.create_user(payload); 
       router.push("/manager/usuario"); 
     } catch (e: any) {
       console.error("Erro ao criar usuário:", e);
@@ -174,7 +170,7 @@ export default function NovoUsuarioPage() {
                 </div>
                 <div className="space-y-2">
                     <Label htmlFor="papel">Papel (Função) *</Label>
-                    <Select value={formData.papel} onValueChange={(v) => handleInputChange("papel", v)} required>
+                    <Select value={formData.cargo} onValueChange={(v) => handleInputChange("cargo", v)} required>
                         <SelectTrigger id="papel">
                         <SelectValue placeholder="Selecione uma função" />
                         </SelectTrigger>
