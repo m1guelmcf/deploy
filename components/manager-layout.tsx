@@ -4,6 +4,8 @@ import type React from "react";
 import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
+import Cookies from "js-cookie"; // <-- 1. IMPORTAÇÃO ADICIONADA
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -37,7 +39,7 @@ interface ManagerData {
   permissions: object;
 }
 
-interface ManagerLayoutProps {
+interface ManagerLayoutProps { // Corrigi o nome da prop aqui
   children: React.ReactNode;
 }
 
@@ -48,14 +50,33 @@ export default function ManagerLayout({ children }: ManagerLayoutProps) {
   const router = useRouter();
   const pathname = usePathname();
 
+  // ==================================================================
+  // 2. BLOCO DE SEGURANÇA CORRIGIDO
+  // ==================================================================
   useEffect(() => {
-    const data = localStorage.getItem("managerData");
-    if (data) {
-      setManagerData(JSON.parse(data));
+    const userInfoString = localStorage.getItem("user_info");
+    const token = Cookies.get("access_token");
+
+    if (userInfoString && token) {
+      const userInfo = JSON.parse(userInfoString);
+      
+      // 3. "TRADUZIMOS" os dados da API para o formato que o layout espera
+      setManagerData({
+        id: userInfo.id || "",
+        name: userInfo.user_metadata?.full_name || "Gestor(a)",
+        email: userInfo.email || "",
+        department: userInfo.user_metadata?.role || "Gestão",
+        // Campos que não vêm do login, definidos como vazios para não quebrar
+        phone: userInfo.phone || "",
+        cpf: "",
+        permissions: {},
+      });
     } else {
+      // Se faltar o token ou os dados, volta para o login
       router.push("/manager/login");
     }
   }, [router]);
+
 
   // 🔥 Responsividade automática da sidebar
   useEffect(() => {
@@ -84,10 +105,10 @@ export default function ManagerLayout({ children }: ManagerLayoutProps) {
   const cancelLogout = () => setShowLogoutDialog(false);
 
   const menuItems = [
-    { href: "/manager/dashboard", icon: Home, label: "Dashboard" },
+    { href: "#", icon: Home, label: "Dashboard" },
     { href: "#", icon: Calendar, label: "Relatórios gerenciais" },
-    { href: "/manager/usuario", icon: User, label: "Gestão de Usuários" },
-    { href: "/manager/home", icon: User, label: "Gestão de Médicos" },
+    { href: "#", icon: User, label: "Gestão de Usuários" },
+    { href: "#", icon: User, label: "Gestão de Médicos" },
     { href: "#", icon: Calendar, label: "Configurações" },
   ];
 
@@ -96,20 +117,20 @@ export default function ManagerLayout({ children }: ManagerLayoutProps) {
   }
 
   return (
-    <div className="min-h-screen bg-background flex">
+    <div className="min-h-screen bg-gray-50 flex">
       {/* Sidebar */}
       <div
-        className={`bg-card border-r border-border transition-all duration-300 fixed top-0 h-screen flex flex-col z-30
+        className={`bg-white border-r border-gray-200 transition-all duration-300 fixed top-0 h-screen flex flex-col z-30
           ${sidebarCollapsed ? "w-16" : "w-64"}`}
       >
         {/* Logo + collapse button */}
-        <div className="p-4 border-b border-border flex items-center justify-between">
+        <div className="p-4 border-b border-gray-200 flex items-center justify-between">
           {!sidebarCollapsed && (
             <div className="flex items-center gap-2">
-              <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-                <div className="w-4 h-4 bg-primary-foreground rounded-sm"></div>
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <div className="w-4 h-4 bg-white rounded-sm"></div>
               </div>
-              <span className="font-semibold text-foreground">
+              <span className="font-semibold text-gray-900">
                 MidConnecta
               </span>
             </div>
@@ -139,10 +160,11 @@ export default function ManagerLayout({ children }: ManagerLayoutProps) {
             return (
               <Link key={item.href} href={item.href}>
                 <div
-                  className={`flex items-center gap-3 px-3 py-2 rounded-lg mb-1 transition-colors ${isActive
-                    ? "bg-accent text-accent-foreground"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                    }`}
+                  className={`flex items-center gap-3 px-3 py-2 rounded-lg mb-1 transition-colors ${
+                    isActive
+                      ? "bg-blue-50 text-blue-600 border-r-2 border-blue-600"
+                      : "text-gray-600 hover:bg-gray-50"
+                  }`}
                 >
                   <Icon className="w-5 h-5 flex-shrink-0" />
                   {!sidebarCollapsed && (
@@ -168,10 +190,10 @@ export default function ManagerLayout({ children }: ManagerLayoutProps) {
             </Avatar>
             {!sidebarCollapsed && (
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-foreground truncate">
+                <p className="text-sm font-medium text-gray-900 truncate">
                   {managerData.name}
                 </p>
-                <p className="text-xs text-muted-foreground truncate">
+                <p className="text-xs text-gray-500 truncate">
                   {managerData.department}
                 </p>
               </div>
@@ -204,14 +226,14 @@ export default function ManagerLayout({ children }: ManagerLayoutProps) {
           ${sidebarCollapsed ? "ml-16" : "ml-64"}`}
       >
         {/* Header */}
-        <header className="bg-card border-b border-border px-4 md:px-6 py-4 flex items-center justify-between">
+        <header className="bg-white border-b border-gray-200 px-4 md:px-6 py-4 flex items-center justify-between">
           {/* Search */}
           <div className="flex items-center gap-4 flex-1 max-w-md">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground w-4 h-4" />
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <Input
                 placeholder="Buscar paciente"
-                className="pl-10 bg-background border-border"
+                className="pl-10 bg-gray-50 border-gray-200"
               />
             </div>
           </div>
@@ -220,7 +242,7 @@ export default function ManagerLayout({ children }: ManagerLayoutProps) {
           <div className="flex items-center gap-4 ml-auto">
             <Button variant="ghost" size="sm" className="relative">
               <Bell className="w-5 h-5" />
-              <Badge className="absolute -top-1 -right-1 w-5 h-5 p-0 flex items-center justify-center bg-destructive text-destructive-foreground text-xs">
+              <Badge className="absolute -top-1 -right-1 w-5 h-5 p-0 flex items-center justify-center bg-red-500 text-white text-xs">
                 1
               </Badge>
             </Button>
