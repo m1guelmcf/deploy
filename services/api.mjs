@@ -16,7 +16,9 @@ export async function login() {
 
     const data = await response.json();
 
-    localStorage.setItem("token", data.access_token);
+    if (typeof window !== 'undefined') {
+        localStorage.setItem("token", data.access_token);
+    }
 
     return data;
 }
@@ -34,7 +36,7 @@ async function request(endpoint, options = {}) {
         loginPromise = null;
     }
 
-    const token = localStorage.getItem("token");
+    const token = typeof window !== 'undefined' ? localStorage.getItem("token") : null;
 
     const headers = {
         "Content-Type": "application/json",
@@ -77,7 +79,7 @@ async function request(endpoint, options = {}) {
     }
 }
 export const api = {
-    get: (endpoint) => request(endpoint, { method: "GET" }),
+    get: (endpoint, options) => request(endpoint, { method: "GET", ...options }),
     post: (endpoint, data) => request(endpoint, { method: "POST", body: JSON.stringify(data) }),
     patch: (endpoint, data) => request(endpoint, { method: "PATCH", body: JSON.stringify(data) }),
     delete: (endpoint) => request(endpoint, { method: "DELETE" }),
