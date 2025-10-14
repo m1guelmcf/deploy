@@ -103,7 +103,7 @@ useEffect(() => {
 
     const menuItems = [
         {
-            href: "#",
+            href: "/doctor/dashboard",
             icon: Home,
             label: "Dashboard",
             // Botão para o dashboard do médico
@@ -125,6 +125,12 @@ useEffect(() => {
             icon: User,
             label: "Pacientes",
             // Botão para a página de visualização de todos os pacientes
+        },
+        {
+            href: "/doctor/disponibilidade",
+            icon: Calendar,
+            label: "Disponibilidade",
+            // Botão para o dashboard do médico
         },
     ];
 
