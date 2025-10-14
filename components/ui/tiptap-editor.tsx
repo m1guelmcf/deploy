@@ -55,7 +55,7 @@ const FontSizeExtension = Extension.create({
   },
 })
 
-const Tiptap = ({ content, onChange }: { content: string, onChange: (richText: string) => void }) => {
+const Tiptap = ({ content, onChange }: { content: string, onChange: (html: string, json: object) => void }) => {
   const editor = useEditor({
     extensions: [
       StarterKit.configure(),
@@ -72,7 +72,7 @@ const Tiptap = ({ content, onChange }: { content: string, onChange: (richText: s
       },
     },
     onUpdate({ editor }) {
-      onChange(editor.getHTML())
+      onChange(editor.getHTML(), editor.getJSON())
     },
     immediatelyRender: false,
   })
@@ -100,24 +100,28 @@ const Tiptap = ({ content, onChange }: { content: string, onChange: (richText: s
     <div>
       <div className="flex items-center gap-2 p-2 border-b">
         <button
+          type="button"
           onClick={() => editor.chain().focus().toggleBold().run()}
           className={editor.isActive('bold') ? 'is-active' : ''}
         >
           <Bold className="w-5 h-5" />
         </button>
         <button
+          type="button"
           onClick={() => editor.chain().focus().toggleItalic().run()}
           className={editor.isActive('italic') ? 'is-active' : ''}
         >
           <Italic className="w-5 h-5" />
         </button>
         <button
+          type="button"
           onClick={() => editor.chain().focus().toggleStrike().run()}
           className={editor.isActive('strike') ? 'is-active' : ''}
         >
           <Strikethrough className="w-5 h-5" />
         </button>
         <button
+          type="button"
           onClick={() => editor.chain().focus().toggleUnderline().run()}
           className={editor.isActive('underline') ? 'is-active' : ''}
         >
