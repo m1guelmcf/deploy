@@ -1,8 +1,7 @@
 "use client"
 
-import type React from "react"
 import { useState, useEffect, useCallback } from "react"
-// Importações de componentes omitidas para brevidade, mas estão no código original
+import { Calendar, Clock, User } from "lucide-react"
 import PatientLayout from "@/components/patient-layout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -10,49 +9,53 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 import { Textarea } from "@/components/ui/textarea"
-import { Calendar, Clock, User } from "lucide-react"
-import { doctorsService } from "services/doctorsApi.mjs";
+import { doctorsService } from "services/doctorsApi.mjs"
 
 interface Doctor {
-    id: string;
-    full_name: string;
-    specialty: string;
-    phone_mobile: string;
-    
+  id: string
+  full_name: string
+  specialty: string
+  phone_mobile: string
 }
 
-// Chave do LocalStorage, a mesma usada em secretarypage.tsx
-const APPOINTMENTS_STORAGE_KEY = "clinic-appointments";
+const APPOINTMENTS_STORAGE_KEY = "clinic-appointments"
 
 export default function ScheduleAppointment() {
   const [selectedDoctor, setSelectedDoctor] = useState("")
   const [selectedDate, setSelectedDate] = useState("")
   const [selectedTime, setSelectedTime] = useState("")
   const [notes, setNotes] = useState("")
-  const [doctors, setDoctors] = useState<Doctor[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
 
+  // novos campos
+  const [tipoConsulta, setTipoConsulta] = useState("presencial")
+  const [duracao, setDuracao] = useState("30")
+  const [convenio, setConvenio] = useState("")
+  const [queixa, setQueixa] = useState("")
+  const [obsPaciente, setObsPaciente] = useState("")
+  const [obsInternas, setObsInternas] = useState("")
+
+  const [doctors, setDoctors] = useState<Doctor[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   const fetchDoctors = useCallback(async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        
-        const data: Doctor[] = await doctorsService.list();
-        setDoctors(data || []); 
-      } catch (e: any) {
-        console.error("Erro ao carregar lista de médicos:", e);
-        setError("Não foi possível carregar a lista de médicos. Verifique a conexão com a API.");
-        setDoctors([]);
-      } finally {
-        setLoading(false);
-      }
-    }, []);
+    setLoading(true)
+    setError(null)
+    try {
+      const data: Doctor[] = await doctorsService.list()
+      setDoctors(data || [])
+    } catch (e: any) {
+      console.error("Erro ao carregar lista de médicos:", e)
+      setError("Não foi possível carregar a lista de médicos. Verifique a conexão com a API.")
+      setDoctors([])
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
-      fetchDoctors();
-  }, [fetchDoctors]);
+    fetchDoctors()
+  }, [fetchDoctors])
 
   const availableTimes = [
     "08:00",
@@ -73,49 +76,54 @@ export default function ScheduleAppointment() {
     e.preventDefault()
 
     const doctorDetails = doctors.find((d) => d.id === selectedDoctor)
-    
-    // --- SIMULAÇÃO DO PACIENTE LOGADO ---
-    // Você só tem um usuário para cada role. Vamos simular um paciente:
-    const patientDetails = { 
-        id: "P001", 
-        full_name: "Paciente Exemplo Único", // Este nome aparecerá na agenda do médico
-        location: "Clínica Geral",
-        phone: "(11) 98765-4321" 
-    }; 
+    const patientDetails = {
+      id: "P001",
+      full_name: "Paciente Exemplo Único",
+      location: "Clínica Geral",
+      phone: "(11) 98765-4321",
+    }
 
     if (!patientDetails || !doctorDetails) {
-        alert("Erro: Selecione o médico ou dados do paciente indisponíveis.");
-        return;
+      alert("Erro: Selecione o médico ou dados do paciente indisponíveis.")
+      return
     }
 
     const newAppointment = {
-        id: new Date().getTime(), // ID único simples
-        patientName: patientDetails.full_name,
-        doctor: doctorDetails.full_name, // Nome completo do médico (necessário para a listagem)
-        specialty: doctorDetails.specialty,
-        date: selectedDate,
-        time: selectedTime,
-        status: "agendada",
-        phone: patientDetails.phone, 
-    };
+      id: new Date().getTime(),
+      patientName: patientDetails.full_name,
+      doctor: doctorDetails.full_name,
+      specialty: doctorDetails.specialty,
+      date: selectedDate,
+      time: selectedTime,
+      tipoConsulta,
+      duracao,
+      convenio,
+      queixa,
+      obsPaciente,
+      obsInternas,
+      notes,
+      status: "agendada",
+      phone: patientDetails.phone,
+    }
 
-    // 1. Carrega agendamentos existentes
-    const storedAppointmentsRaw = localStorage.getItem(APPOINTMENTS_STORAGE_KEY);
-    const currentAppointments = storedAppointmentsRaw ? JSON.parse(storedAppointmentsRaw) : [];
-    
-    // 2. Adiciona o novo agendamento
-    const updatedAppointments = [...currentAppointments, newAppointment];
+    const storedAppointmentsRaw = localStorage.getItem(APPOINTMENTS_STORAGE_KEY)
+    const currentAppointments = storedAppointmentsRaw ? JSON.parse(storedAppointmentsRaw) : []
+    const updatedAppointments = [...currentAppointments, newAppointment]
+    localStorage.setItem(APPOINTMENTS_STORAGE_KEY, JSON.stringify(updatedAppointments))
 
-    // 3. Salva a lista atualizada no LocalStorage
-    localStorage.setItem(APPOINTMENTS_STORAGE_KEY, JSON.stringify(updatedAppointments));
+    alert(`Consulta com ${doctorDetails.full_name} agendada com sucesso!`)
 
-    alert(`Consulta com ${doctorDetails.full_name} agendada com sucesso!`);
-    
-    // Limpar o formulário após o sucesso (opcional)
-    setSelectedDoctor("");
-    setSelectedDate("");
-    setSelectedTime("");
-    setNotes("");
+    // resetar campos
+    setSelectedDoctor("")
+    setSelectedDate("")
+    setSelectedTime("")
+    setNotes("")
+    setTipoConsulta("presencial")
+    setDuracao("30")
+    setConvenio("")
+    setQueixa("")
+    setObsPaciente("")
+    setObsInternas("")
   }
 
   return (
@@ -135,6 +143,9 @@ export default function ScheduleAppointment() {
               </CardHeader>
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-6">
+
+
+                  {/* Médico */}
                   <div className="space-y-2">
                     <Label htmlFor="doctor">Médico</Label>
                     <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
@@ -142,15 +153,26 @@ export default function ScheduleAppointment() {
                         <SelectValue placeholder="Selecione um médico" />
                       </SelectTrigger>
                       <SelectContent>
-                        {doctors.map((doctor) => (
-                          <SelectItem key={doctor.id} value={doctor.id}>
-                            {doctor.full_name} - {doctor.specialty}
+                        {loading ? (
+                          <SelectItem value="loading" disabled>
+                            Carregando médicos...
                           </SelectItem>
-                        ))}
+                        ) : error ? (
+                          <SelectItem value="error" disabled>
+                            Erro ao carregar
+                          </SelectItem>
+                        ) : (
+                          doctors.map((doctor) => (
+                            <SelectItem key={doctor.id} value={doctor.id}>
+                              {doctor.full_name} - {doctor.specialty}
+                            </SelectItem>
+                          ))
+                        )}
                       </SelectContent>
                     </Select>
                   </div>
 
+                  {/* Data e horário */}
                   <div className="grid md:grid-cols-2 gap-4">
                     <div className="space-y-2">
                       <Label htmlFor="date">Data</Label>
@@ -179,9 +201,81 @@ export default function ScheduleAppointment() {
                       </Select>
                     </div>
                   </div>
+                  {/* Tipo e Duração */}
+                  <div className="grid md:grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="tipoConsulta">Tipo de Consulta</Label>
+                      <Select value={tipoConsulta} onValueChange={setTipoConsulta}>
+                        <SelectTrigger id="tipoConsulta">
+                          <SelectValue placeholder="Selecione o tipo" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="presencial">Presencial</SelectItem>
+                          <SelectItem value="online">Telemedicina</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
 
+                    <div className="space-y-2">
+                      <Label htmlFor="duracao">Duração (minutos)</Label>
+                      <Input
+                        id="duracao"
+                        type="number"
+                        min={10}
+                        max={120}
+                        value={duracao}
+                        onChange={(e) => setDuracao(e.target.value)}
+                      />
+                    </div>
+                  </div>
+
+                  {/* Convênio */}
                   <div className="space-y-2">
-                    <Label htmlFor="notes">Observações (opcional)</Label>
+                    <Label htmlFor="convenio">Convênio (opcional)</Label>
+                    <Input
+                      id="convenio"
+                      placeholder="Nome do convênio do paciente"
+                      value={convenio}
+                      onChange={(e) => setConvenio(e.target.value)}
+                    />
+                  </div>
+
+                  {/* Queixa Principal */}
+                  <div className="space-y-2">
+                    <Label htmlFor="queixa">Queixa Principal (opcional)</Label>
+                    <Textarea
+                      id="queixa"
+                      placeholder="Descreva brevemente o motivo da consulta..."
+                      value={queixa}
+                      onChange={(e) => setQueixa(e.target.value)}
+                    />
+                  </div>
+
+                  {/* Observações do Paciente */}
+                  <div className="space-y-2">
+                    <Label htmlFor="obsPaciente">Observações do Paciente (opcional)</Label>
+                    <Textarea
+                      id="obsPaciente"
+                      placeholder="Anotações relevantes informadas pelo paciente..."
+                      value={obsPaciente}
+                      onChange={(e) => setObsPaciente(e.target.value)}
+                    />
+                  </div>
+
+                  {/* Observações Internas */}
+                  <div className="space-y-2">
+                    <Label htmlFor="obsInternas">Observações Internas (opcional)</Label>
+                    <Textarea
+                      id="obsInternas"
+                      placeholder="Anotações para a equipe da clínica..."
+                      value={obsInternas}
+                      onChange={(e) => setObsInternas(e.target.value)}
+                    />
+                  </div>
+
+                  {/* Observações gerais */}
+                  <div className="space-y-2">
+                    <Label htmlFor="notes">Observações gerais (opcional)</Label>
                     <Textarea
                       id="notes"
                       placeholder="Descreva brevemente o motivo da consulta ou observações importantes"
@@ -191,7 +285,12 @@ export default function ScheduleAppointment() {
                     />
                   </div>
 
-                  <Button type="submit" className="w-full" disabled={!selectedDoctor || !selectedDate || !selectedTime}>
+                  {/* Botão */}
+                  <Button
+                    type="submit"
+                    className="w-full"
+                    disabled={!selectedDoctor || !selectedDate || !selectedTime}
+                  >
                     Agendar Consulta
                   </Button>
                 </form>
@@ -199,6 +298,7 @@ export default function ScheduleAppointment() {
             </Card>
           </div>
 
+          {/* Resumo */}
           <div className="space-y-6">
             <Card>
               <CardHeader>
@@ -211,14 +311,18 @@ export default function ScheduleAppointment() {
                 {selectedDoctor && (
                   <div className="flex items-center space-x-2">
                     <User className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm">{doctors.find((d) => d.id === selectedDoctor)?.full_name}</span>
+                    <span className="text-sm">
+                      {doctors.find((d) => d.id === selectedDoctor)?.full_name}
+                    </span>
                   </div>
                 )}
 
                 {selectedDate && (
                   <div className="flex items-center space-x-2">
                     <Calendar className="h-4 w-4 text-gray-500" />
-                    <span className="text-sm">{new Date(selectedDate).toLocaleDateString("pt-BR")}</span>
+                    <span className="text-sm">
+                      {new Date(selectedDate).toLocaleDateString("pt-BR")}
+                    </span>
                   </div>
                 )}
 
