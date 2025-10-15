@@ -16,6 +16,7 @@ export default function AvailabilityPage() {
     const router = useRouter();
     const [isLoading, setIsLoading] = useState(false);
     const userInfo = JSON.parse(localStorage.getItem("user_info") || "{}");
+    const doctorIdTemp = "3bb9ee4a-cfdd-4d81-b628-383907dfa225";
     const [modalidadeConsulta, setModalidadeConsulta] = useState<string>("");
 
     useEffect(() => {
@@ -39,8 +40,8 @@ export default function AvailabilityPage() {
         const formData = new FormData(form);
 
         const apiPayload = {
-            doctor_id: userInfo.id,
-            created_by: userInfo.id,
+            doctor_id: doctorIdTemp,
+            created_by: doctorIdTemp,
             weekday: (formData.get("weekday") as string) || undefined,
             start_time: (formData.get("horarioEntrada") as string) || undefined,
             end_time: (formData.get("horarioSaida") as string) || undefined,
@@ -159,7 +160,7 @@ export default function AvailabilityPage() {
                                         <SelectValue placeholder="Selecione" />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="presencial ">Presencial </SelectItem>
+                                        <SelectItem value="presencial">Presencial </SelectItem>
                                         <SelectItem value="telemedicina">Telemedicina</SelectItem>
                                     </SelectContent>
                                 </Select>
@@ -168,7 +169,10 @@ export default function AvailabilityPage() {
                     </div>
 
                     <div className="flex justify-end gap-4">
-                        <Link href="/doctor/medicos">
+                        <Link href="/doctor/disponibilidade/excecoes">
+                            <Button variant="outline">Adicionar Exceção</Button>
+                        </Link>
+                        <Link href="/doctor/dashboard">
                             <Button variant="outline">Cancelar</Button>
                         </Link>
                         <Button type="submit" className="bg-green-600 hover:bg-green-700">
