@@ -9,7 +9,7 @@ import Cookies from "js-cookie";
 import { jwtDecode } from "jwt-decode";
 import { cn } from "@/lib/utils";
 
-// Componentes Shadcn UI
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -17,10 +17,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Separator } from "@/components/ui/separator";
 import { apikey } from "@/services/api.mjs";
 
-// Hook customizado
+
 import { useToast } from "@/hooks/use-toast";
 
-// Ícones
+
 import { Eye, EyeOff, Mail, Lock, Loader2, UserCheck, Stethoscope, IdCard, Receipt } from "lucide-react";
 
 interface LoginFormProps {
