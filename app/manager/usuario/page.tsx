@@ -51,12 +51,14 @@ interface User {
 
 
 interface FlatUser {
-  id: string;
+  id: string;       
+  user_id: string;      
   full_name?: string;
   email: string;
   phone?: string | null;
   role: string;
 }
+
 
 
 export default function UsersPage() {
@@ -73,69 +75,79 @@ export default function UsersPage() {
   const [selectedRole, setSelectedRole] = useState<string>("");
 
   const fetchUsers = useCallback(async () => {
-    setLoading(true);
-    setError(null);
-    try {
+  setLoading(true);
+  setError(null);
+  try {
+    const data = await usersService.list_roles(); // já retorna o JSON diretamente
+    console.log("Resposta da API list_roles:", data);
 
-      const { data, error } = await usersService.list_roles();
-      if (error) throw error;
+    if (Array.isArray(data)) {
+      const mappedUsers: FlatUser[] = data.map((item: any) => ({
+        id: item.id || (item.user_id ?? ""),           // id da linha ou fallback
+        user_id: item.user_id || item.id || "",        // garante que user_id exista
+        full_name: item.full_name || "—",
+        email: item.email || "—",
+        phone: item.phone ?? "—",
+        role: item.role || "—",
+      }));
 
-      if (Array.isArray(data)) {
-        setUsers(data as FlatUser[]);
-      } else {
-        console.warn("Formato inesperado recebido:", data);
-        setUsers([]);
-      }
-    } catch (err: any) {
-      console.error("Erro ao buscar usuários:", err);
-      setError("Não foi possível carregar os usuários. Tente novamente.");
+      setUsers(mappedUsers);
+    } else {
+      console.warn("Formato inesperado recebido em list_roles:", data);
       setUsers([]);
-    } finally {
-      setLoading(false);
     }
-  }, []);
+  } catch (err: any) {
+    console.error("Erro ao buscar usuários:", err);
+    setError("Não foi possível carregar os usuários. Tente novamente.");
+    setUsers([]);
+  } finally {
+    setLoading(false);
+  }
+}, []);
 
+  
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
+  
+  
+  
 
   
   const openDetailsDialog = async (flatUser: FlatUser) => {
-    setDetailsDialogOpen(true);
-    setUserDetails(null); 
-    
-    try {
-    
-      const fullUserData: User = await usersService.full_data(flatUser.id);
-  
-   
-      setUserDetails(fullUserData);
-      
-    } catch (err: any) {
-      console.error("Erro ao buscar detalhes do usuário:", err);
-      
-      setUserDetails({
-        user: {
-          id: flatUser.id,
-          email: flatUser.email || "",
-          created_at: "Erro ao Carregar",
-          last_sign_in_at: "Erro ao Carregar",
-        },
-        profile: {
-          full_name: "Erro ao Carregar Detalhes",
-          phone: "—",
-        },
-        roles: [],
-        permissions: {},
-      } as any);
-    }
-  };
+  setDetailsDialogOpen(true);
+  setUserDetails(null);
+
+  try {
+    console.log("Buscando detalhes do user_id:", flatUser.user_id);
+    const fullUserData: User = await usersService.full_data(flatUser.user_id);
+    setUserDetails(fullUserData);
+  } catch (err: any) {
+    console.error("Erro ao buscar detalhes do usuário:", err);
+    setUserDetails({
+      user: {
+        id: flatUser.user_id,
+        email: flatUser.email || "",
+        created_at: "Erro ao Carregar",
+        last_sign_in_at: "Erro ao Carregar",
+      },
+      profile: {
+        full_name: flatUser.full_name || "Erro ao Carregar Detalhes",
+        phone: flatUser.phone || "—",
+      },
+      roles: [],
+      permissions: {},
+    } as any);
+  }
+};
 
 
 
-  const filteredUsers = selectedRole
-    ? users.filter((u) => u.role === selectedRole)
-    : users;
+  const filteredUsers = selectedRole && selectedRole !== "all"
+  ? users.filter((u) => u.role === selectedRole)
+  : users;
+
+
 
   return (
     <ManagerLayout>
@@ -156,18 +168,19 @@ export default function UsersPage() {
         <div className="flex items-center space-x-4 bg-white p-4 rounded-lg border border-gray-200">
           <Filter className="w-5 h-5 text-gray-400" />
           <Select onValueChange={setSelectedRole} value={selectedRole}>
-            <SelectTrigger className="w-[180px]">
-              <SelectValue placeholder="Filtrar por Papel" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="">Todos</SelectItem>
-              <SelectItem value="admin">Admin</SelectItem>
-              <SelectItem value="gestor">Gestor</SelectItem>
-              <SelectItem value="medico">Médico</SelectItem>
-              <SelectItem value="secretaria">Secretaria</SelectItem>
-              <SelectItem value="user">Usuário</SelectItem>
-            </SelectContent>
-          </Select>
+  <SelectTrigger className="w-[180px]">
+    <SelectValue placeholder="Filtrar por Papel" />
+  </SelectTrigger>
+  <SelectContent>
+    <SelectItem value="all">Todos</SelectItem>
+    <SelectItem value="admin">Admin</SelectItem>
+    <SelectItem value="gestor">Gestor</SelectItem>
+    <SelectItem value="medico">Médico</SelectItem>
+    <SelectItem value="secretaria">Secretaria</SelectItem>
+    <SelectItem value="user">Usuário</SelectItem>
+  </SelectContent>
+</Select>
+
         </div>
 
         
@@ -211,7 +224,7 @@ export default function UsersPage() {
                       <td className="px-6 py-4 text-sm text-gray-500 capitalize">{user.role || "—"}</td>
                       <td className="px-6 py-4 text-right">
                         <div className="flex justify-end space-x-1">
-                          <Button
+                         <Button
                             variant="outline"
                             size="icon"
                             onClick={() => openDetailsDialog(user)} 
@@ -219,6 +232,7 @@ export default function UsersPage() {
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
+
                         </div>
                       </td>
                     </tr>
