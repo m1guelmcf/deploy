@@ -5,7 +5,7 @@ import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
 import Cookies from "js-cookie"; // Manteremos para o logout, se necessário
-import { api } from '@/services/api.mjs';
+import { api } from "@/services/api.mjs";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -48,7 +48,7 @@ export default function DoctorLayout({ children }: PatientLayoutProps) {
 
         if (userInfoString && token) {
             const userInfo = JSON.parse(userInfoString);
-            
+
             setDoctorData({
                 id: userInfo.id || "",
                 name: userInfo.user_metadata?.full_name || "Doutor(a)",
@@ -86,24 +86,23 @@ export default function DoctorLayout({ children }: PatientLayoutProps) {
         setShowLogoutDialog(true);
     };
 
-    
     // --- ALTERAÇÃO 2: A função de logout agora é MUITO mais simples ---
-  const confirmLogout = async () => {
-    try {
-        // Chama a função centralizada para fazer o logout no servidor
-        await api.logout();
-    } catch (error) {
-        // O erro já é logado dentro da função api.logout, não precisamos fazer nada aqui
-    } finally {
-        // A responsabilidade do componente é apenas limpar o estado local e redirecionar
-        localStorage.removeItem("user_info");
-        localStorage.removeItem("token");
-        Cookies.remove("access_token"); // Limpeza de segurança
-        
-        setShowLogoutDialog(false);
-        router.push("/"); // Redireciona para a home
-    }
-  };
+    const confirmLogout = async () => {
+        try {
+            // Chama a função centralizada para fazer o logout no servidor
+            await api.logout();
+        } catch (error) {
+            // O erro já é logado dentro da função api.logout, não precisamos fazer nada aqui
+        } finally {
+            // A responsabilidade do componente é apenas limpar o estado local e redirecionar
+            localStorage.removeItem("user_info");
+            localStorage.removeItem("token");
+            Cookies.remove("access_token"); // Limpeza de segurança
+
+            setShowLogoutDialog(false);
+            router.push("/"); // Redireciona para a home
+        }
+    };
 
     const cancelLogout = () => {
         setShowLogoutDialog(false);
@@ -114,10 +113,36 @@ export default function DoctorLayout({ children }: PatientLayoutProps) {
     };
 
     const menuItems = [
-        { href: "#", icon: Home, label: "Dashboard" },
-        { href: "/doctor/medicos/consultas", icon: Calendar, label: "Consultas" },
-        { href: "#", icon: Clock, label: "Editor de Laudo" },
-        { href: "/doctor/medicos", icon: User, label: "Pacientes" },
+        {
+            href: "/doctor/dashboard",
+            icon: Home,
+            label: "Dashboard",
+            // Botão para o dashboard do médico
+        },
+        {
+            href: "/doctor/medicos/consultas",
+            icon: Calendar,
+            label: "Consultas",
+            // Botão para página de consultas marcadas do médico atual
+        },
+        {
+            href: "#",
+            icon: Clock,
+            label: "Editor de Laudo",
+            // Botão para página do editor de laudo
+        },
+        {
+            href: "/doctor/medicos",
+            icon: User,
+            label: "Pacientes",
+            // Botão para a página de visualização de todos os pacientes
+        },
+        {
+            href: "/doctor/disponibilidade",
+            icon: Calendar,
+            label: "Disponibilidade",
+            // Botão para o dashboard do médico
+        },
     ];
 
     if (!doctorData) {
@@ -143,7 +168,6 @@ export default function DoctorLayout({ children }: PatientLayoutProps) {
                         </Button>
                     </div>
                 </div>
-
                 <nav className="flex-1 p-2 overflow-y-auto">
                     {menuItems.map((item) => {
                         const Icon = item.icon;
@@ -159,48 +183,62 @@ export default function DoctorLayout({ children }: PatientLayoutProps) {
                         );
                     })}
                 </nav>
-
                 // ... (seu código anterior)
-
-            {/* Sidebar para desktop */}
-            <div className={`bg-white border-r border-gray-200 transition-all duration-300 ${sidebarCollapsed ? "w-16" : "w-64"} fixed left-0 top-0 h-screen flex flex-col z-50`}>
-                <div className="p-4 border-b border-gray-200">
-                    <div className="flex items-center justify-between">
-                        {!sidebarCollapsed && (
-                            <div className="flex items-center gap-2">
-                                <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
-                                    <div className="w-4 h-4 bg-white rounded-sm"></div>
+                {/* Sidebar para desktop */}
+                <div className={`bg-white border-r border-gray-200 transition-all duration-300 ${sidebarCollapsed ? "w-16" : "w-64"} fixed left-0 top-0 h-screen flex flex-col z-50`}>
+                    <div className="p-4 border-b border-gray-200">
+                        <div className="flex items-center justify-between">
+                            {!sidebarCollapsed && (
+                                <div className="flex items-center gap-2">
+                                    <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                                        <div className="w-4 h-4 bg-white rounded-sm"></div>
+                                    </div>
+                                    <span className="font-semibold text-gray-900">MediConnect</span>
                                 </div>
-                                <span className="font-semibold text-gray-900">MediConnect</span>
-                            </div>
-                        )}
-                        <Button variant="ghost" size="sm" onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="p-1">
-                            {sidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
-                        </Button>
+                            )}
+                            <Button variant="ghost" size="sm" onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="p-1">
+                                {sidebarCollapsed ? <ChevronRight className="w-4 h-4" /> : <ChevronLeft className="w-4 h-4" />}
+                            </Button>
+                        </div>
                     </div>
-                </div>
 
-                <nav className="flex-1 p-2 overflow-y-auto">
-                    {menuItems.map((item) => {
-                        const Icon = item.icon;
-                        const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
+                    <nav className="flex-1 p-2 overflow-y-auto">
+                        {menuItems.map((item) => {
+                            const Icon = item.icon;
+                            const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
 
-                        return (
-                            <Link key={item.href} href={item.href}>
-                                <div className={`flex items-center gap-3 px-3 py-2 rounded-lg mb-1 transition-colors ${isActive ? "bg-blue-50 text-blue-600 border-r-2 border-blue-600" : "text-gray-600 hover:bg-gray-50"}`}>
-                                    <Icon className="w-5 h-5 flex-shrink-0" />
-                                    {!sidebarCollapsed && <span className="font-medium">{item.label}</span>}
-                                </div>
-                            </Link>
-                        );
-                    })}
-                </nav>
+                            return (
+                                <Link key={item.href} href={item.href}>
+                                    <div className={`flex items-center gap-3 px-3 py-2 rounded-lg mb-1 transition-colors ${isActive ? "bg-blue-50 text-blue-600 border-r-2 border-blue-600" : "text-gray-600 hover:bg-gray-50"}`}>
+                                        <Icon className="w-5 h-5 flex-shrink-0" />
+                                        {!sidebarCollapsed && <span className="font-medium">{item.label}</span>}
+                                    </div>
+                                </Link>
+                            );
+                        })}
+                    </nav>
 
-                <div className="border-t p-4 mt-auto">
-                    <div className="flex items-center space-x-3 mb-4">
-                        {!sidebarCollapsed && (
-                            <>
-                                <Avatar>
+                    <div className="border-t p-4 mt-auto">
+                        <div className="flex items-center space-x-3 mb-4">
+                            {!sidebarCollapsed && (
+                                <>
+                                    <Avatar>
+                                        <AvatarImage src="/placeholder.svg?height=40&width=40" />
+                                        <AvatarFallback>
+                                            {doctorData.name
+                                                .split(" ")
+                                                .map((n) => n[0])
+                                                .join("")}
+                                        </AvatarFallback>
+                                    </Avatar>
+                                    <div className="flex-1 min-w-0">
+                                        <p className="text-sm font-medium text-gray-900 truncate">{doctorData.name}</p>
+                                        <p className="text-xs text-gray-500 truncate">{doctorData.specialty}</p>
+                                    </div>
+                                </>
+                            )}
+                            {sidebarCollapsed && (
+                                <Avatar className="mx-auto">
                                     <AvatarImage src="/placeholder.svg?height=40&width=40" />
                                     <AvatarFallback>
                                         {doctorData.name
@@ -209,39 +247,17 @@ export default function DoctorLayout({ children }: PatientLayoutProps) {
                                             .join("")}
                                     </AvatarFallback>
                                 </Avatar>
-                                <div className="flex-1 min-w-0">
-                                    <p className="text-sm font-medium text-gray-900 truncate">{doctorData.name}</p>
-                                    <p className="text-xs text-gray-500 truncate">{doctorData.specialty}</p>
-                                </div>
-                            </>
-                        )}
-                        {sidebarCollapsed && (
-                            <Avatar className="mx-auto">
-                                <AvatarImage src="/placeholder.svg?height=40&width=40" />
-                                <AvatarFallback>
-                                    {doctorData.name
-                                        .split(" ")
-                                        .map((n) => n[0])
-                                        .join("")}
-                                </AvatarFallback>
-                            </Avatar>
-                        )}
-                    </div>
+                            )}
+                        </div>
 
-                    <div
-                        className={`flex items-center gap-3 px-3 py-2 rounded-lg mb-1 transition-colors text-muted-foreground hover:bg-accent cursor-pointer ${sidebarCollapsed ? "justify-center" : ""}`}
-                        onClick={handleLogout}
-                    >
-                        <LogOut className="w-5 h-5 flex-shrink-0" />
-                        {!sidebarCollapsed && <span className="font-medium">Sair</span>}
+                        <div className={`flex items-center gap-3 px-3 py-2 rounded-lg mb-1 transition-colors text-muted-foreground hover:bg-accent cursor-pointer ${sidebarCollapsed ? "justify-center" : ""}`} onClick={handleLogout}>
+                            <LogOut className="w-5 h-5 flex-shrink-0" />
+                            {!sidebarCollapsed && <span className="font-medium">Sair</span>}
+                        </div>
                     </div>
                 </div>
             </div>
-        
-            </div>
-            {isMobileMenuOpen && (
-                <div className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden" onClick={toggleMobileMenu}></div>
-            )}
+            {isMobileMenuOpen && <div className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden" onClick={toggleMobileMenu}></div>}
             <div className={`bg-white border-r border-gray-200 fixed left-0 top-0 h-screen flex flex-col z-50 transition-transform duration-300 md:hidden ${isMobileMenuOpen ? "translate-x-0 w-64" : "-translate-x-full w-64"}`}>
                 <div className="p-4 border-b border-gray-200 flex items-center justify-between">
                     <div className="flex items-center gap-2">
@@ -287,7 +303,15 @@ export default function DoctorLayout({ children }: PatientLayoutProps) {
                             <p className="text-xs text-gray-500 truncate">{doctorData.specialty}</p>
                         </div>
                     </div>
-                    <Button variant="outline" size="sm" className="w-full bg-transparent" onClick={() => { handleLogout(); toggleMobileMenu(); }}>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        className="w-full bg-transparent"
+                        onClick={() => {
+                            handleLogout();
+                            toggleMobileMenu();
+                        }}
+                    >
                         <LogOut className="mr-2 h-4 w-4" />
                         Sair
                     </Button>
