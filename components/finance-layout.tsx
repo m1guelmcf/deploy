@@ -138,7 +138,7 @@ export default function FinancierLayout({ children }: PatientLayoutProps) {
                   <div className="w-4 h-4 bg-primary-foreground rounded-sm"></div>
                 </div>
                 <span className="font-semibold text-foreground">
-                  MidConnecta
+                  MediConnect
                 </span>
               </div>
             )}
