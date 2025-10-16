@@ -62,8 +62,8 @@ const API_KEY =
 export const apikey = API_KEY;
 let loginPromise = null;
 
-// 🔹 Autenticação
 export async function login() {
+  console.log("🔐 Iniciando login...");
   const res = await fetch(`${BASE_URL}/auth/v1/token?grant_type=password`, {
     method: "POST",
     headers: {
@@ -77,10 +77,19 @@ export async function login() {
     }),
   });
 
+  if (!res.ok) {
+    const msg = await res.text();
+    console.error("❌ Erro no login:", res.status, msg);
+    throw new Error(`Erro ao autenticar: ${res.status} - ${msg}`);
+  }
+
   const data = await res.json();
-  if (typeof window !== "undefined") {
+  console.log("✅ Login bem-sucedido:", data);
+
+  if (typeof window !== "undefined" && data.access_token) {
     localStorage.setItem("token", data.access_token);
   }
+
   return data;
 }
 
@@ -90,22 +99,35 @@ async function request(endpoint, options = {}) {
   try {
     await loginPromise;
   } catch (error) {
-    console.error("Falha ao autenticar:", error);
+    console.error("⚠️ Falha ao autenticar:", error);
   } finally {
     loginPromise = null;
   }
 
-  const token =
+  let token =
     typeof window !== "undefined" ? localStorage.getItem("token") : null;
+
+  if (!token) {
+    console.warn("⚠️ Token não encontrado, refazendo login...");
+    const data = await login();
+    token = data.access_token;
+  }
 
   const headers = {
     "Content-Type": "application/json",
     apikey: API_KEY,
-    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+    Authorization: `Bearer ${token}`,
     ...options.headers,
   };
 
-  const response = await fetch(`${BASE_URL}${endpoint}`, {
+  const fullUrl =
+    endpoint.startsWith("/rest/v1") || endpoint.startsWith("/functions/")
+      ? `${BASE_URL}${endpoint}`
+      : `${BASE_URL}/rest/v1${endpoint}`;
+
+  console.log("🌐 Requisição para:", fullUrl, "com headers:", headers);
+
+  const response = await fetch(fullUrl, {
     ...options,
     headers,
   });
@@ -139,6 +161,7 @@ export const api = {
 };
   if (!response.ok) {
     const msg = await response.text();
+    console.error("❌ Erro HTTP:", response.status, msg);
     throw new Error(`Erro HTTP: ${response.status} - Detalhes: ${msg}`);
   }
 
@@ -155,3 +178,4 @@ export const api = {
     request(endpoint, { method: "PATCH", body: JSON.stringify(data) }),
   delete: (endpoint) => request(endpoint, { method: "DELETE" }),
 };
+

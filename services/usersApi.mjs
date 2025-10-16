@@ -2,14 +2,16 @@ import { api } from "./api.mjs";
 
 export const usersService = {
   async list_roles() {
+    // continua usando /rest/v1 normalmente
     return await api.get(`/rest/v1/user_roles?select=id,user_id,role,created_at`);
   },
 
   async create_user(data) {
+    // continua usando a Edge Function corretamente
     return await api.post(`/functions/v1/user-create`, data);
   },
 
-  // 🚀 Busca dados completos do usuário direto do banco (sem função bloqueada)
+  // 🚀 Busca dados completos do usuário direto do banco
   async full_data(user_id) {
     if (!user_id) throw new Error("user_id é obrigatório");
 
