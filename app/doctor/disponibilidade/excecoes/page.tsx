@@ -161,7 +161,6 @@ export default function ExceptionPage() {
                             <form className="space-y-6" onSubmit={handleSubmit}>
                                 <div className="bg-white rounded-lg border border-gray-200 p-6">
                                     <h2 className="text-lg font-semibold text-gray-900 mb-6">Dados </h2>
-                                    <h4>{selectedCalendarDate?.toLocaleDateString("pt-BR", { weekday: "long" })}</h4>
                                     <div className="space-y-6">
                                         <div className="grid md:grid-cols-5 gap-6">
                                             <div>

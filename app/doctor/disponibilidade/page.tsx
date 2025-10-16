@@ -145,7 +145,7 @@ export default function AvailabilityPage() {
                                 </div>
                                 <div>
                                     <Label htmlFor="duracaoConsulta" className="text-sm font-medium text-gray-700">
-                                        Duração Da Consulta
+                                        Duração Da Consulta (min)
                                     </Label>
                                     <Input type="number" id="duracaoConsulta" name="duracaoConsulta" required className="mt-1" />
                                 </div>
