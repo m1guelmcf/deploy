@@ -18,14 +18,13 @@ import ManagerLayout from "@/components/manager-layout";
 import { usersService } from "services/usersApi.mjs";
 import { login } from "services/api.mjs";
 
-// Adicionada a propriedade 'senha' e 'confirmarSenha'
 interface UserFormData {
   email: string;
   nomeCompleto: string;
   telefone: string;
   papel: string;
   senha: string;
-  confirmarSenha: string; // Novo campo para confirmação
+  confirmarSenha: string;
 }
 
 const defaultFormData: UserFormData = {
@@ -37,7 +36,6 @@ const defaultFormData: UserFormData = {
   confirmarSenha: "",
 };
 
-// Funções de formatação de telefone
 const cleanNumber = (value: string): string => value.replace(/\D/g, "");
 const formatPhone = (value: string): string => {
   const cleaned = cleanNumber(value).substring(0, 11);
@@ -63,13 +61,17 @@ export default function NovoUsuarioPage() {
     e.preventDefault();
     setError(null);
 
-    // Validação de campos obrigatórios
-    if (!formData.email || !formData.nomeCompleto || !formData.papel || !formData.senha || !formData.confirmarSenha) {
+    if (
+      !formData.email ||
+      !formData.nomeCompleto ||
+      !formData.papel ||
+      !formData.senha ||
+      !formData.confirmarSenha
+    ) {
       setError("Por favor, preencha todos os campos obrigatórios.");
       return;
     }
 
-    // Validação de senhas
     if (formData.senha !== formData.confirmarSenha) {
       setError("A Senha e a Confirmação de Senha não coincidem.");
       return;
@@ -85,19 +87,20 @@ export default function NovoUsuarioPage() {
         email: formData.email.trim().toLowerCase(),
         phone: formData.telefone || null,
         role: formData.papel,
-        password: formData.senha, // Senha adicionada
+        password: formData.senha,
       };
 
       console.log("📤 Enviando payload:", payload);
+
       await usersService.create_user(payload);
 
       router.push("/manager/usuario");
     } catch (e: any) {
       console.error("Erro ao criar usuário:", e);
-      const msg =
-        e.message ||
-        "Não foi possível criar o usuário. Verifique os dados e tente novamente.";
-      setError(msg);
+      setError(
+        e?.message ||
+          "Não foi possível criar o usuário. Verifique os dados e tente novamente."
+      );
     } finally {
       setIsSaving(false);
     }
@@ -105,14 +108,13 @@ export default function NovoUsuarioPage() {
 
   return (
     <ManagerLayout>
-      {/* Container principal: w-full e centralizado. max-w-screen-lg para evitar expansão excessiva */}
       <div className="w-full h-full p-4 md:p-8 flex justify-center items-start">
         <div className="w-full max-w-screen-lg space-y-8">
-          
-          {/* Cabeçalho */}
           <div className="flex items-center justify-between border-b pb-4">
             <div>
-              <h1 className="text-3xl font-extrabold text-gray-900">Novo Usuário</h1>
+              <h1 className="text-3xl font-extrabold text-gray-900">
+                Novo Usuário
+              </h1>
               <p className="text-md text-gray-500">
                 Preencha os dados para cadastrar um novo usuário no sistema.
               </p>
@@ -122,7 +124,6 @@ export default function NovoUsuarioPage() {
             </Link>
           </div>
 
-          {/* Formulário */}
           <form
             onSubmit={handleSubmit}
             className="space-y-6 bg-white p-6 md:p-10 border rounded-xl shadow-lg"
@@ -130,14 +131,11 @@ export default function NovoUsuarioPage() {
             {error && (
               <div className="p-4 bg-red-50 text-red-700 rounded-lg border border-red-300">
                 <p className="font-semibold">Erro no Cadastro:</p>
-                <p className="text-sm">{error}</p>
+                <p className="text-sm break-words">{error}</p>
               </div>
             )}
 
-            {/* Campos de Entrada - Usando Grid de 2 colunas para organização */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              
-              {/* Nome Completo - Largura total */}
               <div className="space-y-2 md:col-span-2">
                 <Label htmlFor="nomeCompleto">Nome Completo *</Label>
                 <Input
@@ -151,7 +149,6 @@ export default function NovoUsuarioPage() {
                 />
               </div>
 
-              {/* E-mail (Coluna 1) */}
               <div className="space-y-2">
                 <Label htmlFor="email">E-mail *</Label>
                 <Input
@@ -164,7 +161,6 @@ export default function NovoUsuarioPage() {
                 />
               </div>
 
-              {/* Papel (Função) (Coluna 2) */}
               <div className="space-y-2">
                 <Label htmlFor="papel">Papel (Função) *</Label>
                 <Select
@@ -185,7 +181,6 @@ export default function NovoUsuarioPage() {
                 </Select>
               </div>
 
-              {/* Senha (Coluna 1) */}
               <div className="space-y-2">
                 <Label htmlFor="senha">Senha *</Label>
                 <Input
@@ -194,28 +189,32 @@ export default function NovoUsuarioPage() {
                   value={formData.senha}
                   onChange={(e) => handleInputChange("senha", e.target.value)}
                   placeholder="Mínimo 8 caracteres"
-                  minLength={8} 
+                  minLength={8}
                   required
                 />
               </div>
 
-              {/* Confirmar Senha (Coluna 2) */}
               <div className="space-y-2">
                 <Label htmlFor="confirmarSenha">Confirmar Senha *</Label>
                 <Input
                   id="confirmarSenha"
                   type="password"
                   value={formData.confirmarSenha}
-                  onChange={(e) => handleInputChange("confirmarSenha", e.target.value)}
+                  onChange={(e) =>
+                    handleInputChange("confirmarSenha", e.target.value)
+                  }
                   placeholder="Repita a senha"
                   required
                 />
-                {formData.senha && formData.confirmarSenha && formData.senha !== formData.confirmarSenha && (
-                    <p className="text-xs text-red-500">As senhas não coincidem.</p>
-                )}
+                {formData.senha &&
+                  formData.confirmarSenha &&
+                  formData.senha !== formData.confirmarSenha && (
+                    <p className="text-xs text-red-500">
+                      As senhas não coincidem.
+                    </p>
+                  )}
               </div>
-              
-              {/* Telefone (Opcional, mas mantido no grid) */}
+
               <div className="space-y-2">
                 <Label htmlFor="telefone">Telefone</Label>
                 <Input
@@ -228,10 +227,8 @@ export default function NovoUsuarioPage() {
                   maxLength={15}
                 />
               </div>
-
             </div>
 
-            {/* Botões de Ação */}
             <div className="flex justify-end gap-4 pt-6 border-t mt-6">
               <Link href="/manager/usuario">
                 <Button type="button" variant="outline" disabled={isSaving}>
