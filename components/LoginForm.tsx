@@ -1,223 +1,157 @@
 // Caminho: components/LoginForm.tsx
-"use client";
+"use client"
 
-import type React from "react";
-import { useState } from "react";
-import { useRouter } from "next/navigation";
-import Link from "next/link";
-import Cookies from "js-cookie";
-import { jwtDecode } from "jwt-decode";
-import { cn } from "@/lib/utils";
+import type React from "react"
+import { useState } from "react"
+import { useRouter } from "next/navigation"
+import Link from "next/link"
+import { cn } from "@/lib/utils"
+
+// Nossos serviços de API centralizados
+import { loginWithEmailAndPassword, api } from "@/services/api";
 
 // Componentes Shadcn UI
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Separator } from "@/components/ui/separator";
-import { apikey } from "@/services/api.mjs";
-
-// Hook customizado
-import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Card, CardContent } from "@/components/ui/card"
+import { useToast } from "@/hooks/use-toast"
 
 // Ícones
-import { Eye, EyeOff, Mail, Lock, Loader2, UserCheck, Stethoscope, IdCard, Receipt } from "lucide-react";
+import { Eye, EyeOff, Loader2, Mail, Lock } from "lucide-react"
 
 interface LoginFormProps {
-    title: string;
-    description: string;
-    role: "secretary" | "doctor" | "patient" | "admin" | "manager" | "finance";
-    themeColor: "blue" | "green" | "orange";
-    redirectPath: string;
-    children?: React.ReactNode;
+  children?: React.ReactNode
 }
 
 interface FormState {
-    email: string;
-    password: string;
+  email: string
+  password: string
 }
 
-// Supondo que o payload do seu token tenha esta estrutura
-interface DecodedToken {
-    name: string;
-    email: string;
-    role: string;
-    exp: number;
-    // Adicione outros campos que seu token possa ter
-}
+export function LoginForm({ children }: LoginFormProps) {
+  const [form, setForm] = useState<FormState>({ email: "", password: "" })
+  const [showPassword, setShowPassword] = useState(false)
+  const [isLoading, setIsLoading] = useState(false)
+  const router = useRouter()
+  const { toast } = useToast()
 
-const themeClasses = {
-    blue: {
-        iconBg: "bg-blue-100",
-        iconText: "text-blue-600",
-        button: "bg-blue-600 hover:bg-blue-700",
-        link: "text-blue-600 hover:text-blue-700",
-        focus: "focus:border-blue-500 focus:ring-blue-500",
-    },
-    green: {
-        iconBg: "bg-green-100",
-        iconText: "text-green-600",
-        button: "bg-green-600 hover:bg-green-700",
-        link: "text-green-600 hover:text-green-700",
-        focus: "focus:border-green-500 focus:ring-green-500",
-    },
-    orange: {
-        iconBg: "bg-orange-100",
-        iconText: "text-orange-600",
-        button: "bg-orange-600 hover:bg-orange-700",
-        link: "text-orange-600 hover:text-orange-700",
-        focus: "focus:border-orange-500 focus:ring-orange-500",
-    },
-};
+  // ==================================================================
+  // LÓGICA DE LOGIN INTELIGENTE E CENTRALIZADA
+  // ==================================================================
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setIsLoading(true);
+    localStorage.removeItem("token");
+    localStorage.removeItem("user_info");
 
-const roleIcons = {
-    secretary: UserCheck,
-    patient: Stethoscope,
-    doctor: Stethoscope,
-    admin: UserCheck,
-    manager: IdCard,
-    finance: Receipt,
-};
-
-export function LoginForm({ title, description, role, themeColor, redirectPath, children }: LoginFormProps) {
-    const [form, setForm] = useState<FormState>({ email: "", password: "" });
-    const [showPassword, setShowPassword] = useState(false);
-    const [isLoading, setIsLoading] = useState(false);
-    const router = useRouter();
-    const { toast } = useToast();
-
-    const currentTheme = themeClasses[themeColor];
-    const Icon = roleIcons[role];
-
-    // ==================================================================
-    // AJUSTE PRINCIPAL NA LÓGICA DE LOGIN
-    // ==================================================================
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        setIsLoading(true);
-
-        const LOGIN_URL = "https://yuanqfswhberkoevtmfr.supabase.co/auth/v1/token?grant_type=password";
-        const API_KEY = apikey;
-
-        if (!API_KEY) {
-            toast({
-                title: "Erro de Configuração",
-                description: "A chave da API não foi encontrada.",
-            });
-            setIsLoading(false);
-            return;
+    try {
+        const authData = await loginWithEmailAndPassword(form.email, form.password);
+        const user = authData.user;
+        if (!user || !user.id) {
+            throw new Error("Resposta de autenticação inválida: ID do usuário não encontrado.");
         }
 
-        try {
-            const response = await fetch(LOGIN_URL, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    apikey: API_KEY,
-                },
-                body: JSON.stringify({ email: form.email, password: form.password }),
-            });
+        const rolesData = await api.get(`/rest/v1/user_roles?user_id=eq.${user.id}&select=role`);
 
-            const data = await response.json();
-
-            if (!response.ok) {
-                throw new Error(data.error_description || "Credenciais inválidas. Tente novamente.");
-            }
-
-            const accessToken = data.access_token;
-            const user = data.user;
-
-            /* =================== Verificação de Role Desativada Temporariamente =================== */
-            // if (user.user_metadata.role !== role) {
-            //   toast({ title: "Acesso Negado", ... });
-            //   return;
-            // }
-            /* ===================================================================================== */
-
-            Cookies.set("access_token", accessToken, { expires: 1, secure: true });
-            localStorage.setItem("user_info", JSON.stringify(user));
-
-            toast({
-                title: "Login bem-sucedido!",
-                description: `Bem-vindo(a), ${user.user_metadata.full_name || "usuário"}! Redirecionando...`,
-            });
-
-            router.push(redirectPath);
-        } catch (error) {
-            toast({
-                title: "Erro no Login",
-                description: error instanceof Error ? error.message : "Ocorreu um erro inesperado.",
-            });
-        } finally {
-            setIsLoading(false);
+        if (!rolesData || rolesData.length === 0) {
+            throw new Error("Login bem-sucedido, mas nenhum perfil de acesso foi encontrado para este usuário.");
         }
-    };
 
-    // O JSX do return permanece exatamente o mesmo, preservando seus ajustes.
-    return (
-        <Card className="w-full max-w-md shadow-xl border-0 bg-white/80 backdrop-blur-sm">
-            <CardHeader className="text-center space-y-4 pb-8">
-                <div className={cn("mx-auto w-16 h-16 rounded-full flex items-center justify-center", currentTheme.iconBg)}>
-                    <Icon className={cn("w-8 h-8", currentTheme.iconText)} />
-                </div>
-                <div>
-                    <CardTitle className="text-2xl font-bold text-gray-900">{title}</CardTitle>
-                    <CardDescription className="text-gray-600 mt-2">{description}</CardDescription>
-                </div>
-            </CardHeader>
-            <CardContent className="px-8 pb-8">
-                <form onSubmit={handleSubmit} className="space-y-6">
-                    {/* Inputs e Botão */}
-                    <div className="space-y-2">
-                        <Label htmlFor="email">E-mail</Label>
-                        <div className="relative">
-                            <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-                            <Input id="email" type="email" placeholder="seu.email@clinica.com" value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} className={cn("pl-11 h-12 border-slate-200", currentTheme.focus)} required disabled={isLoading} />
-                        </div>
-                    </div>
-                    <div className="space-y-2">
-                        <Label htmlFor="password">Senha</Label>
-                        <div className="relative">
-                            <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400 w-5 h-5" />
-                            <Input id="password" type={showPassword ? "text" : "password"} placeholder="Digite sua senha" value={form.password} onChange={(e) => setForm({ ...form, password: e.target.value })} className={cn("pl-11 pr-12 h-12 border-slate-200", currentTheme.focus)} required disabled={isLoading} />
-                            <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 p-0 text-gray-400 hover:text-gray-600" disabled={isLoading}>
-                                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
-                            </button>
-                        </div>
-                    </div>
-                    <Button type="submit" className={cn("w-full h-12 text-base font-semibold", currentTheme.button)} disabled={isLoading}>
-                        {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Entrar"}
-                    </Button>
-                </form>
-                {/* Conteúdo Extra (children) */}
-                <div className="mt-8">
-                    {children ? (
-                        <div className="space-y-4">
-                            <div className="relative">
-                                <div className="absolute inset-0 flex items-center">
-                                    <div className="w-full border-t border-slate-200"></div>
-                                </div>
-                                <div className="relative flex justify-center text-sm">
-                                    <span className="px-4 bg-white text-slate-500">Novo por aqui?</span>
-                                </div>
-                            </div>
-                            {children}
-                        </div>
-                    ) : (
-                        <>
-                            <div className="relative">
-                                <Separator className="my-6" />
-                                <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-3 text-sm text-gray-500">ou</span>
-                            </div>
-                            <div className="text-center">
-                                <Link href="/" className={cn("text-sm font-medium hover:underline", currentTheme.link)}>
-                                    Voltar à página inicial
-                                </Link>
-                            </div>
-                        </>
-                    )}
-                </div>
-            </CardContent>
-        </Card>
-    );
+        const userRole = rolesData[0].role;
+        const completeUserInfo = { ...user, user_metadata: { ...user.user_metadata, role: userRole } };
+        localStorage.setItem('user_info', JSON.stringify(completeUserInfo));
+
+        let redirectPath = "";
+        switch (userRole) {
+            case "admin":
+            case "manager": redirectPath = "/manager/home"; break;
+            case "medico": redirectPath = "/doctor/medicos"; break;
+            case "secretary": redirectPath = "/secretary/pacientes"; break;
+            case "patient": redirectPath = "/patient/dashboard"; break;
+            case "finance": redirectPath = "/finance/home"; break;
+        }
+
+        if (!redirectPath) {
+            throw new Error(`O perfil de acesso '${userRole}' não é válido para login. Contate o suporte.`);
+        }
+        
+        toast({
+            title: "Login bem-sucedido!",
+            description: `Bem-vindo(a)! Redirecionando...`,
+        });
+        
+        router.push(redirectPath);
+
+    } catch (error) {
+        localStorage.removeItem("token");
+        localStorage.removeItem("user_info");
+        
+        console.error("ERRO DETALHADO NO CATCH:", error);
+
+        toast({
+            title: "Erro no Login",
+            description: error instanceof Error ? error.message : "Ocorreu um erro inesperado.",
+        });
+    } finally {
+        setIsLoading(false);
+    }
+  }
+
+  // ==================================================================
+  // JSX VISUALMENTE RICO E UNIFICADO
+  // ==================================================================
+  return (
+    // Usamos Card e CardContent para manter a consistência, mas o estilo principal
+    // virá da página 'app/login/page.tsx' que envolve este componente.
+    <Card className="w-full bg-transparent border-0 shadow-none">
+      <CardContent className="p-0"> {/* Removemos o padding para dar controle à página pai */}
+        <form onSubmit={handleSubmit} className="space-y-6">
+          <div className="space-y-2">
+            <Label htmlFor="email">E-mail</Label>
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5" />
+              <Input 
+                id="email" 
+                type="email" 
+                placeholder="seu.email@exemplo.com" 
+                value={form.email} 
+                onChange={(e) => setForm({ ...form, email: e.target.value })} 
+                className="pl-10 h-11" 
+                required 
+                disabled={isLoading}
+                autoComplete="username" // Boa prática de acessibilidade
+              />
+            </div>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">Senha</Label>
+            <div className="relative">
+              <Lock className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground w-5 h-5" />
+              <Input 
+                id="password" 
+                type={showPassword ? "text" : "password"} 
+                placeholder="Digite sua senha" 
+                value={form.password} 
+                onChange={(e) => setForm({ ...form, password: e.target.value })} 
+                className="pl-10 pr-12 h-11" 
+                required 
+                disabled={isLoading}
+                autoComplete="current-password" // Boa prática de acessibilidade
+              />
+              <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8 p-0 text-muted-foreground hover:text-foreground" disabled={isLoading}>
+                {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+              </button>
+            </div>
+          </div>
+          <Button type="submit" className="w-full h-11 text-base font-semibold" disabled={isLoading}>
+            {isLoading ? <Loader2 className="w-5 h-5 animate-spin" /> : "Entrar"}
+          </Button>
+        </form>
+
+        {/* O children permite que a página de login adicione links extras aqui */}
+        {children}
+      </CardContent>
+    </Card>
+  )
 }

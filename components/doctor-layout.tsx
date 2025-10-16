@@ -4,7 +4,8 @@ import type React from "react";
 import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
-import Cookies from "js-cookie"; // <-- 1. IMPORTAÇÃO ADICIONADA
+import Cookies from "js-cookie"; // Manteremos para o logout, se necessário
+import { api } from '@/services/api.mjs';
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -39,23 +40,20 @@ export default function DoctorLayout({ children }: PatientLayoutProps) {
     const router = useRouter();
     const pathname = usePathname();
 
-    // ==================================================================
-    // 2. BLOCO DE SEGURANÇA CORRIGIDO
-    // ==================================================================
     useEffect(() => {
         const userInfoString = localStorage.getItem("user_info");
-        const token = Cookies.get("access_token");
+        // --- ALTERAÇÃO PRINCIPAL AQUI ---
+        // Procurando o token no localStorage, onde ele foi realmente salvo.
+        const token = localStorage.getItem("token");
 
         if (userInfoString && token) {
             const userInfo = JSON.parse(userInfoString);
             
-            // 3. "TRADUZIMOS" os dados da API para o formato que o layout espera
             setDoctorData({
                 id: userInfo.id || "",
                 name: userInfo.user_metadata?.full_name || "Doutor(a)",
                 email: userInfo.email || "",
                 specialty: userInfo.user_metadata?.specialty || "Especialidade",
-                // Campos que não vêm do login, definidos como vazios para não quebrar
                 phone: userInfo.phone || "",
                 cpf: "",
                 crm: "",
@@ -63,35 +61,49 @@ export default function DoctorLayout({ children }: PatientLayoutProps) {
                 permissions: {},
             });
         } else {
-            // Se faltar o token ou os dados, volta para o login
-            router.push("/doctor/login");
+            // Se não encontrar, aí sim redireciona.
+            router.push("/login");
         }
     }, [router]);
 
+    // O restante do seu código permanece exatamente o mesmo...
     useEffect(() => {
-  const handleResize = () => setWindowWidth(window.innerWidth);
-  handleResize(); // inicializa com a largura atual
-  window.addEventListener("resize", handleResize);
-  return () => window.removeEventListener("resize", handleResize);
-}, []);
+        const handleResize = () => setWindowWidth(window.innerWidth);
+        handleResize();
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
 
-useEffect(() => {
-  if (isMobile) {
-    setSidebarCollapsed(true);
-  } else {
-    setSidebarCollapsed(false);
-  }
-}, [isMobile]);
+    useEffect(() => {
+        if (isMobile) {
+            setSidebarCollapsed(true);
+        } else {
+            setSidebarCollapsed(false);
+        }
+    }, [isMobile]);
 
     const handleLogout = () => {
         setShowLogoutDialog(true);
     };
 
-    const confirmLogout = () => {
-        localStorage.removeItem("doctorData");
+    
+    // --- ALTERAÇÃO 2: A função de logout agora é MUITO mais simples ---
+  const confirmLogout = async () => {
+    try {
+        // Chama a função centralizada para fazer o logout no servidor
+        await api.logout();
+    } catch (error) {
+        // O erro já é logado dentro da função api.logout, não precisamos fazer nada aqui
+    } finally {
+        // A responsabilidade do componente é apenas limpar o estado local e redirecionar
+        localStorage.removeItem("user_info");
+        localStorage.removeItem("token");
+        Cookies.remove("access_token"); // Limpeza de segurança
+        
         setShowLogoutDialog(false);
-        router.push("/");
-    };
+        router.push("/"); // Redireciona para a home
+    }
+  };
 
     const cancelLogout = () => {
         setShowLogoutDialog(false);
@@ -102,30 +114,10 @@ useEffect(() => {
     };
 
     const menuItems = [
-        {
-            href: "#",
-            icon: Home,
-            label: "Dashboard",
-            // Botão para o dashboard do médico
-        },
-        {
-            href: "/doctor/medicos/consultas",
-            icon: Calendar,
-            label: "Consultas",
-            // Botão para página de consultas marcadas do médico atual
-        },
-        {
-            href: "#",
-            icon: Clock,
-            label: "Editor de Laudo",
-            // Botão para página do editor de laudo
-        },
-        {
-            href: "/doctor/medicos",
-            icon: User,
-            label: "Pacientes",
-            // Botão para a página de visualização de todos os pacientes
-        },
+        { href: "#", icon: Home, label: "Dashboard" },
+        { href: "/doctor/medicos/consultas", icon: Calendar, label: "Consultas" },
+        { href: "#", icon: Clock, label: "Editor de Laudo" },
+        { href: "/doctor/medicos", icon: User, label: "Pacientes" },
     ];
 
     if (!doctorData) {
@@ -133,8 +125,8 @@ useEffect(() => {
     }
 
     return (
+        // O restante do seu código JSX permanece exatamente o mesmo
         <div className="min-h-screen bg-background flex">
-            {/* Sidebar para desktop */}
             <div className={`bg-card border-r border transition-all duration-300 ${sidebarCollapsed ? "w-16" : "w-64"} fixed left-0 top-0 h-screen flex flex-col z-50`}>
                 <div className="p-4 border-b border">
                     <div className="flex items-center justify-between">
@@ -170,7 +162,6 @@ useEffect(() => {
 
                 <div className="border-t p-4 mt-auto">
                     <div className="flex items-center space-x-3 mb-4">
-                        {/* Se a sidebar estiver recolhida, o avatar e o texto do usuário também devem ser condensados ou ocultados */}
                         {!sidebarCollapsed && (
                             <>
                                 <Avatar>
@@ -189,7 +180,7 @@ useEffect(() => {
                             </>
                         )}
                         {sidebarCollapsed && (
-                            <Avatar className="mx-auto"> {/* Centraliza o avatar quando recolhido */}
+                            <Avatar className="mx-auto">
                                 <AvatarImage src="/placeholder.svg?height=40&width=40" />
                                 <AvatarFallback>
                                     {doctorData.name
@@ -201,7 +192,6 @@ useEffect(() => {
                         )}
                     </div>
 
-                    {/* Novo botão de sair, usando a mesma estrutura dos itens de menu */}
                     <div
                         className={`flex items-center gap-3 px-3 py-2 rounded-lg mb-1 transition-colors text-muted-foreground hover:bg-accent cursor-pointer ${sidebarCollapsed ? "justify-center" : ""}`}
                         onClick={handleLogout}
@@ -233,7 +223,7 @@ useEffect(() => {
                         const isActive = pathname === item.href || (item.href !== "/" && pathname.startsWith(item.href));
 
                         return (
-                            <Link key={item.href} href={item.href} onClick={toggleMobileMenu}> {/* Fechar menu ao clicar */}
+                            <Link key={item.href} href={item.href} onClick={toggleMobileMenu}>
                                 <div className={`flex items-center gap-3 px-3 py-2 rounded-lg mb-1 transition-colors ${isActive ? "bg-accent text-accent-foreground border-r-2 border-primary" : "text-muted-foreground hover:bg-accent"}`}>
                                     <Icon className="w-5 h-5 flex-shrink-0" />
                                     <span className="font-medium">{item.label}</span>
@@ -259,17 +249,14 @@ useEffect(() => {
                             <p className="text-xs text-muted-foreground truncate">{doctorData.specialty}</p>
                         </div>
                     </div>
-                    <Button variant="outline" size="sm" className="w-full bg-transparent" onClick={() => { handleLogout(); toggleMobileMenu(); }}> {/* Fechar menu ao deslogar */}
+                    <Button variant="outline" size="sm" className="w-full bg-transparent" onClick={() => { handleLogout(); toggleMobileMenu(); }}>
                         <LogOut className="mr-2 h-4 w-4" />
                         Sair
                     </Button>
                 </div>
             </div>
 
-
-            {/* Main Content */}
-      <div className={`flex-1 flex flex-col transition-all duration-300 ${sidebarCollapsed ? "ml-16" : "ml-64"}`}>
-                {/* Header */}
+            <div className={`flex-1 flex flex-col transition-all duration-300 ${sidebarCollapsed ? "ml-16" : "ml-64"}`}>
                 <header className="bg-card border-b border px-6 py-4">
                     <div className="flex items-center justify-between">
                         <div className="flex items-center gap-4 flex-1">
@@ -288,11 +275,9 @@ useEffect(() => {
                     </div>
                 </header>
 
-                {/* Page Content */}
                 <main className="flex-1 p-6">{children}</main>
             </div>
 
-            {/* Logout confirmation dialog */}
             <Dialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
