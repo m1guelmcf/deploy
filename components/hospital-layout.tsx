@@ -123,7 +123,7 @@ export default function HospitalLayout({ children }: HospitalLayoutProps) {
                 <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
                   <div className="w-4 h-4 bg-primary-foreground rounded-sm"></div>
                 </div>
-                <span className="font-semibold text-foreground">MedConnect</span>
+                <span className="font-semibold text-foreground">MediConnect</span>
               </div>
             )}
             <Button variant="ghost" size="sm" onClick={() => setSidebarCollapsed(!sidebarCollapsed)} className="p-1">

@@ -117,7 +117,9 @@ export default function ManagerLayout({ children }: ManagerLayoutProps) {
               <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
                 <div className="w-4 h-4 bg-white rounded-sm"></div>
               </div>
-              <span className="font-semibold text-gray-900">MidConnecta</span>
+              <span className="font-semibold text-gray-900">
+                MediConnect
+              </span>
             </div>
           )}
           <Button
