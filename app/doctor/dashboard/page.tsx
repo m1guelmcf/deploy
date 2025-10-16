@@ -273,7 +273,7 @@ export default function PatientDashboard() {
                                                 <div className="text-center">
                                                     <p className="font-semibold capitalize">{date}</p>
                                                     <p className="text-sm text-gray-600">
-                                                        {startTime} - {endTime}
+                                                        {startTime} - {endTime} <br/> -
                                                     </p>
                                                 </div>
                                                 <div className="text-center mt-2">
