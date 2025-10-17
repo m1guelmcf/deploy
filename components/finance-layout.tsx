@@ -1,3 +1,4 @@
+// Caminho: [seu-caminho]/FinancierLayout.tsx
 "use client";
 
 import Cookies from "js-cookie";
@@ -5,32 +6,14 @@ import type React from "react";
 import { useState, useEffect } from "react";
 import { useRouter, usePathname } from "next/navigation";
 import Link from "next/link";
+import { api } from '@/services/api.mjs';
+
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import {
-  Search,
-  Bell,
-  Calendar,
-  Clock,
-  User,
-  LogOut,
-  Menu,
-  X,
-  Home,
-  FileText,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Search, Bell, Calendar, Clock, User, LogOut, Menu, X, Home, FileText, ChevronLeft, ChevronRight } from "lucide-react";
 
 interface FinancierData {
   id: string;
@@ -47,37 +30,45 @@ interface PatientLayoutProps {
 }
 
 export default function FinancierLayout({ children }: PatientLayoutProps) {
-  const [financierData, setFinancierData] = useState<FinancierData | null>(
-    null
-  );
+  const [financierData, setFinancierData] = useState<FinancierData | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [showLogoutDialog, setShowLogoutDialog] = useState(false);
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
-    const data = localStorage.getItem("financierData");
-    if (data) {
-      setFinancierData(JSON.parse(data));
+    const userInfoString = localStorage.getItem("user_info");
+    // --- ALTERAÇÃO 1: Buscando o token no localStorage ---
+    const token = localStorage.getItem("token");
+
+    if (userInfoString && token) {
+      const userInfo = JSON.parse(userInfoString);
+      
+      setFinancierData({
+        id: userInfo.id || "",
+        name: userInfo.user_metadata?.full_name || "Financeiro",
+        email: userInfo.email || "",
+        department: userInfo.user_metadata?.department || "Departamento Financeiro",
+        phone: userInfo.phone || "",
+        cpf: "",
+        permissions: {},
+      });
     } else {
-      router.push("/finance/login");
+      // --- ALTERAÇÃO 2: Redirecionando para o login central ---
+      router.push("/login");
     }
   }, [router]);
 
-  // 🔥 Responsividade automática da sidebar
   useEffect(() => {
     const handleResize = () => {
-      // Ajuste o breakpoint conforme necessário. 1024px (lg) ou 768px (md) são comuns.
       if (window.innerWidth < 1024) {
         setSidebarCollapsed(true);
       } else {
         setSidebarCollapsed(false);
       }
     };
-
-    handleResize(); // executa na primeira carga
+    handleResize();
     window.addEventListener("resize", handleResize);
-
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
@@ -85,10 +76,22 @@ export default function FinancierLayout({ children }: PatientLayoutProps) {
     setShowLogoutDialog(true);
   };
 
-  const confirmLogout = () => {
-    localStorage.removeItem("financierData");
-    setShowLogoutDialog(false);
-    router.push("/");
+  // --- ALTERAÇÃO 2: A função de logout agora é MUITO mais simples ---
+  const confirmLogout = async () => {
+    try {
+        // Chama a função centralizada para fazer o logout no servidor
+        await api.logout();
+    } catch (error) {
+        // O erro já é logado dentro da função api.logout, não precisamos fazer nada aqui
+    } finally {
+        // A responsabilidade do componente é apenas limpar o estado local e redirecionar
+        localStorage.removeItem("user_info");
+        localStorage.removeItem("token");
+        Cookies.remove("access_token"); // Limpeza de segurança
+        
+        setShowLogoutDialog(false);
+        router.push("/"); // Redireciona para a home
+    }
   };
 
   const cancelLogout = () => {
@@ -96,35 +99,19 @@ export default function FinancierLayout({ children }: PatientLayoutProps) {
   };
 
   const menuItems = [
-    {
-      href: "#",
-      icon: Home,
-      label: "Dashboard",
-    },
-    {
-      href: "#",
-      icon: Calendar,
-      label: "Relatórios financeiros",
-    },
-    {
-      href: "#",
-      icon: User,
-      label: "Finanças Gerais",
-    },
-    {
-      href: "#",
-      icon: Calendar,
-      label: "Configurações",
-    },
+    { href: "#", icon: Home, label: "Dashboard" },
+    { href: "#", icon: Calendar, label: "Relatórios financeiros" },
+    { href: "#", icon: User, label: "Finanças Gerais" },
+    { href: "#", icon: Calendar, label: "Configurações" },
   ];
 
   if (!financierData) {
-    return <div>Carregando...</div>;
+    return <div className="flex h-screen w-full items-center justify-center">Carregando...</div>;
   }
 
   return (
+    // O restante do seu código JSX permanece inalterado
     <div className="min-h-screen bg-background flex">
-      {/* Sidebar */}
       <div
         className={`bg-card border-r border-border transition-all duration-300 ${
           sidebarCollapsed ? "w-16" : "w-64"
@@ -183,7 +170,6 @@ export default function FinancierLayout({ children }: PatientLayoutProps) {
           })}
         </nav>
 
-        {/* Footer user info */}
         <div className="border-t p-4 mt-auto">
           <div className="flex items-center space-x-3 mb-4">
             <Avatar>
@@ -206,34 +192,29 @@ export default function FinancierLayout({ children }: PatientLayoutProps) {
               </div>
             )}
           </div>
-          {/* Botão Sair - ajustado para responsividade */}
           <Button
             variant="outline"
             size="sm"
             className={
               sidebarCollapsed
-                ? "w-full bg-transparent flex justify-center items-center p-2" // Centraliza o ícone quando colapsado
+                ? "w-full bg-transparent flex justify-center items-center p-2"
                 : "w-full bg-transparent"
             }
             onClick={handleLogout}
           >
             <LogOut
               className={sidebarCollapsed ? "h-5 w-5" : "mr-2 h-4 w-4"}
-            />{" "}
-            {/* Remove margem quando colapsado */}
-            {!sidebarCollapsed && "Sair"}{" "}
-            {/* Mostra o texto apenas quando não está colapsado */}
+            />
+            {!sidebarCollapsed && "Sair"}
           </Button>
         </div>
       </div>
 
-      {/* Main Content */}
       <div
         className={`flex-1 flex flex-col transition-all duration-300 ${
           sidebarCollapsed ? "ml-16" : "ml-64"
         }`}
       >
-        {/* Header */}
         <header className="bg-card border-b border-border px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4 flex-1 max-w-md">
@@ -257,11 +238,9 @@ export default function FinancierLayout({ children }: PatientLayoutProps) {
           </div>
         </header>
 
-        {/* Page Content */}
         <main className="flex-1 p-6">{children}</main>
       </div>
 
-      {/* Logout confirmation dialog */}
       <Dialog open={showLogoutDialog} onOpenChange={setShowLogoutDialog}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>

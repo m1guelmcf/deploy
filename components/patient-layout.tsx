@@ -1,36 +1,18 @@
 "use client"
 
-
 import Cookies from "js-cookie";
 import type React from "react"
 import { useState, useEffect } from "react"
 import Link from "next/link"
 import { useRouter, usePathname } from "next/navigation"
+import { api } from "@/services/api.mjs"; // Importando nosso cliente de API
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import {
-  Search,
-  Bell,
-  User,
-  LogOut,
-  FileText,
-  Clock,
-  Calendar,
-  Home,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react"
-
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
+import { Search, Bell, User, LogOut, FileText, Clock, Calendar, Home, ChevronLeft, ChevronRight } from "lucide-react"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 interface PatientData {
   name: string
@@ -41,65 +23,72 @@ interface PatientData {
   address: string
 }
 
-interface HospitalLayoutProps {
+interface PatientLayoutProps {
   children: React.ReactNode
 }
 
-export default function HospitalLayout({ children }: HospitalLayoutProps) {
+// --- ALTERAÇÃO 1: Renomeando o componente para maior clareza ---
+export default function PatientLayout({ children }: PatientLayoutProps) {
   const [patientData, setPatientData] = useState<PatientData | null>(null)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [showLogoutDialog, setShowLogoutDialog] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
 
-  // 🔹 Ajuste automático no resize
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth < 1024) {
-        setSidebarCollapsed(true) // colapsa no mobile
+        setSidebarCollapsed(true)
       } else {
-        setSidebarCollapsed(false) // expande no desktop
+        setSidebarCollapsed(false)
       }
     }
-
     handleResize()
     window.addEventListener("resize", handleResize)
     return () => window.removeEventListener("resize", handleResize)
   }, [])
 
   useEffect(() => {
-    // 1. Procuramos pela chave correta: 'user_info'
     const userInfoString = localStorage.getItem("user_info");
-    // 2. Para mais segurança, verificamos também se o token de acesso existe no cookie
-    const token = Cookies.get("access_token");
+    // --- ALTERAÇÃO 2: Buscando o token no localStorage ---
+    const token = localStorage.getItem("token");
 
     if (userInfoString && token) {
       const userInfo = JSON.parse(userInfoString);
-
-      // 3. Adaptamos os dados para a estrutura que seu layout espera (PatientData)
-      // Usamos os dados do objeto 'user' que a API do Supabase nos deu
+      
       setPatientData({
         name: userInfo.user_metadata?.full_name || "Paciente",
         email: userInfo.email || "",
-        // Os campos abaixo não vêm do login, então os deixamos vazios por enquanto
         phone: userInfo.phone || "",
         cpf: "", 
         birthDate: "",
         address: "",
       });
     } else {
-      // Se as informações do usuário ou o token não forem encontrados, mandamos para o login.
-      router.push("/patient/login");
+      // --- ALTERAÇÃO 3: Redirecionando para o login central ---
+      router.push("/login");
     }
   }, [router]);
   
   const handleLogout = () => setShowLogoutDialog(true)
 
-  const confirmLogout = () => {
-    localStorage.removeItem("patientData")
-    setShowLogoutDialog(false)
-    router.push("/")
-  }
+  // --- ALTERAÇÃO 4: Função de logout completa e padronizada ---
+  const confirmLogout = async () => {
+    try {
+        // Chama a função centralizada para fazer o logout no servidor
+        await api.logout();
+    } catch (error) {
+        console.error("Erro ao tentar fazer logout no servidor:", error);
+    } finally {
+        // Limpeza completa e consistente do estado local
+        localStorage.removeItem("user_info");
+        localStorage.removeItem("token");
+        Cookies.remove("access_token"); // Limpeza de segurança
+        
+        setShowLogoutDialog(false);
+        router.push("/"); // Redireciona para a página inicial
+    }
+  };
 
   const cancelLogout = () => setShowLogoutDialog(false)
 
@@ -112,7 +101,7 @@ export default function HospitalLayout({ children }: HospitalLayoutProps) {
   ]
 
   if (!patientData) {
-    return <div>Carregando...</div>
+    return <div className="flex h-screen w-full items-center justify-center">Carregando...</div>;
   }
 
   return (

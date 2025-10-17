@@ -1,3 +1,4 @@
+// Caminho: app/(secretary)/layout.tsx (ou o caminho do seu arquivo)
 "use client"
 
 import type React from "react"
@@ -5,30 +6,14 @@ import { useState, useEffect } from "react"
 import { useRouter, usePathname } from "next/navigation"
 import Link from "next/link"
 import Cookies from "js-cookie";
+import { api } from '@/services/api.mjs'; // Importando nosso cliente de API central
+
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog"
-
-import {
-  Search,
-  Bell,
-  Calendar,
-  Clock,
-  User,
-  LogOut,
-  Home,
-  ChevronLeft,
-  ChevronRight,
-} from "lucide-react"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
+import { Search, Bell, Calendar, Clock, User, LogOut, Home, ChevronLeft, ChevronRight } from "lucide-react"
 
 interface SecretaryData {
   id: string
@@ -46,12 +31,36 @@ interface SecretaryLayoutProps {
 }
 
 export default function SecretaryLayout({ children }: SecretaryLayoutProps) {
+  const [secretaryData, setSecretaryData] = useState<SecretaryData | null>(null);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [showLogoutDialog, setShowLogoutDialog] = useState(false)
   const router = useRouter()
   const pathname = usePathname()
 
-  // 🔹 Colapsar no mobile e expandir no desktop automaticamente
+  useEffect(() => {
+    const userInfoString = localStorage.getItem("user_info");
+    // --- ALTERAÇÃO 1: Buscando o token no localStorage ---
+    const token = localStorage.getItem("token");
+
+    if (userInfoString && token) {
+      const userInfo = JSON.parse(userInfoString);
+      
+      setSecretaryData({
+        id: userInfo.id || "",
+        name: userInfo.user_metadata?.full_name || "Secretária",
+        email: userInfo.email || "",
+        department: userInfo.user_metadata?.department || "Atendimento",
+        phone: userInfo.phone || "",
+        cpf: "",
+        employeeId: "",
+        permissions: {},
+      });
+    } else {
+      // --- ALTERAÇÃO 2: Redirecionando para o login central ---
+      router.push("/login");
+    }
+  }, [router]);
+
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth < 1024) {
@@ -66,10 +75,25 @@ export default function SecretaryLayout({ children }: SecretaryLayoutProps) {
   }, [])
 
   const handleLogout = () => setShowLogoutDialog(true)
-  const confirmLogout = () => {
-    setShowLogoutDialog(false)
-    router.push("/")
-  }
+
+  // --- ALTERAÇÃO 3: Função de logout completa e padronizada ---
+  const confirmLogout = async () => {
+    try {
+        // Chama a função centralizada para fazer o logout no servidor
+        await api.logout();
+    } catch (error) {
+        console.error("Erro ao tentar fazer logout no servidor:", error);
+    } finally {
+        // Limpeza completa e consistente do estado local
+        localStorage.removeItem("user_info");
+        localStorage.removeItem("token");
+        Cookies.remove("access_token"); // Limpeza de segurança
+        
+        setShowLogoutDialog(false);
+        router.push("/"); // Redireciona para a página inicial
+    }
+  };
+
   const cancelLogout = () => setShowLogoutDialog(false)
 
   const menuItems = [
@@ -79,16 +103,10 @@ export default function SecretaryLayout({ children }: SecretaryLayoutProps) {
     { href: "/secretary/pacientes", icon: User, label: "Pacientes" },
   ]
 
-  const secretaryData: SecretaryData = {
-    id: "1",
-    name: "Secretária Exemplo",
-    email: "secretaria@hospital.com",
-    phone: "999999999",
-    cpf: "000.000.000-00",
-    employeeId: "12345",
-    department: "Atendimento",
-    permissions: {},
+  if (!secretaryData) {
+    return <div className="flex h-screen w-full items-center justify-center">Carregando...</div>;
   }
+
 
   return (
     <div className="min-h-screen bg-background flex">
@@ -165,23 +183,20 @@ export default function SecretaryLayout({ children }: SecretaryLayoutProps) {
               </div>
             )}
           </div>
-          {/* Botão Sair - ajustado para responsividade */}
           <Button
             variant="outline"
             size="sm"
             className={
               sidebarCollapsed
-                ? "w-full bg-transparent flex justify-center items-center p-2" // Centraliza o ícone quando colapsado
+                ? "w-full bg-transparent flex justify-center items-center p-2"
                 : "w-full bg-transparent"
             }
             onClick={handleLogout}
           >
             <LogOut
               className={sidebarCollapsed ? "h-5 w-5" : "mr-2 h-4 w-4"}
-            />{" "}
-            {/* Remove margem quando colapsado */}
-            {!sidebarCollapsed && "Sair"}{" "}
-            {/* Mostra o texto apenas quando não está colapsado */}
+            />
+            {!sidebarCollapsed && "Sair"}
           </Button>
         </div>
       </div>
@@ -191,7 +206,6 @@ export default function SecretaryLayout({ children }: SecretaryLayoutProps) {
         className={`flex-1 flex flex-col transition-all duration-300 ${sidebarCollapsed ? "ml-16" : "ml-64"
           }`}
       >
-        {/* Header */}
         <header className="bg-card border-b border-border px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-4 flex-1 max-w-md">
@@ -205,13 +219,6 @@ export default function SecretaryLayout({ children }: SecretaryLayoutProps) {
             </div>
 
             <div className="flex items-center gap-4">
-              {/* Este botão no header parece ter sido uma cópia do botão "Sair" da sidebar.
-                  Removi a lógica de sidebarCollapsed aqui, pois o header é independente.
-                  Se a intenção era ter um botão de logout no header, ele não deve ser afetado pela sidebar.
-                  Ajustei para ser um botão de sino de notificação, como nos exemplos anteriores,
-                  já que você tem o ícone Bell importado e uma badge para notificação.
-                  Se você quer um botão de LogOut aqui, por favor, me avise!
-              */}
               <Button variant="ghost" size="sm" className="relative">
                 <Bell className="w-5 h-5" />
                 <Badge className="absolute -top-1 -right-1 w-5 h-5 p-0 flex items-center justify-center bg-destructive text-destructive-foreground text-xs">
@@ -222,7 +229,6 @@ export default function SecretaryLayout({ children }: SecretaryLayoutProps) {
           </div>
         </header>
 
-        {/* Page Content */}
         <main className="flex-1 p-6">{children}</main>
       </div>
 
