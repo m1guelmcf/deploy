@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  transpilePackages: ["axios", "uuid", "some-esm-lib"],
   eslint: {
     ignoreDuringBuilds: true,
   },
